@@ -1,0 +1,1353 @@
+Index: adslibrary/src/main/java/com/marketdigitalcode/adslibrary/MdcRewarded.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.marketdigitalcode.adslibrary;\r\n\r\n\r\nimport static com.marketdigitalcode.adslibrary.util.AdsConstant.ADMOB;\r\nimport static com.marketdigitalcode.adslibrary.util.AdsConstant.AD_STATUS_ON;\r\nimport static com.marketdigitalcode.adslibrary.util.AdsConstant.APPLOVIN;\r\nimport static com.marketdigitalcode.adslibrary.util.AdsConstant.APPLOVIN_DISCOVERY;\r\nimport static com.marketdigitalcode.adslibrary.util.AdsConstant.APPLOVIN_MAX;\r\nimport static com.marketdigitalcode.adslibrary.util.AdsConstant.FACEBOOK;\r\nimport static com.marketdigitalcode.adslibrary.util.AdsConstant.FAN;\r\nimport static com.marketdigitalcode.adslibrary.util.AdsConstant.FAN_BIDDING_ADMOB;\r\nimport static com.marketdigitalcode.adslibrary.util.AdsConstant.FAN_BIDDING_AD_MANAGER;\r\nimport static com.marketdigitalcode.adslibrary.util.AdsConstant.FAN_BIDDING_APPLOVIN_MAX;\r\nimport static com.marketdigitalcode.adslibrary.util.AdsConstant.FAN_BIDDING_IRONSOURCE;\r\nimport static com.marketdigitalcode.adslibrary.util.AdsConstant.GOOGLE_AD_MANAGER;\r\nimport static com.marketdigitalcode.adslibrary.util.AdsConstant.IRONSOURCE;\r\nimport static com.marketdigitalcode.adslibrary.util.AdsConstant.STARTAPP;\r\nimport static com.marketdigitalcode.adslibrary.util.AdsConstant.UNITY;\r\nimport static com.marketdigitalcode.adslibrary.util.AdsConstant.WORTISE;\r\n\r\nimport android.app.Activity;\r\nimport android.os.Bundle;\r\nimport android.util.Log;\r\n\r\nimport androidx.annotation.NonNull;\r\nimport androidx.annotation.Nullable;\r\n\r\nimport com.applovin.adview.AppLovinInterstitialAd;\r\nimport com.applovin.adview.AppLovinInterstitialAdDialog;\r\nimport com.applovin.mediation.MaxAd;\r\nimport com.applovin.mediation.MaxError;\r\nimport com.applovin.mediation.MaxReward;\r\nimport com.applovin.mediation.MaxRewardedAdListener;\r\nimport com.applovin.mediation.ads.MaxRewardedAd;\r\nimport com.applovin.sdk.AppLovinAd;\r\nimport com.applovin.sdk.AppLovinAdDisplayListener;\r\nimport com.applovin.sdk.AppLovinAdLoadListener;\r\n\r\nimport com.applovin.sdk.AppLovinAdSize;\r\nimport com.applovin.sdk.AppLovinSdk;\r\nimport com.facebook.ads.Ad;\r\nimport com.facebook.ads.AdError;\r\nimport com.facebook.ads.RewardedVideoAdListener;\r\nimport com.google.android.gms.ads.AdRequest;\r\nimport com.google.android.gms.ads.FullScreenContentCallback;\r\nimport com.google.android.gms.ads.LoadAdError;\r\nimport com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;\r\nimport com.ironsource.mediationsdk.IronSource;\r\nimport com.ironsource.mediationsdk.adunit.adapter.utility.AdInfo;\r\nimport com.ironsource.mediationsdk.logger.IronSourceError;\r\nimport com.ironsource.mediationsdk.model.Placement;\r\nimport com.ironsource.mediationsdk.sdk.LevelPlayRewardedVideoListener;\r\nimport com.marketdigitalcode.adslibrary.face.OnRewardedAdCompleteListener;\r\nimport com.marketdigitalcode.adslibrary.face.OnRewardedAdDismissedListener;\r\nimport com.marketdigitalcode.adslibrary.face.OnRewardedAdErrorListener;\r\nimport com.marketdigitalcode.adslibrary.helper.AppLovinCustomEventInterstitial;\r\nimport com.marketdigitalcode.adslibrary.util.AdsTools;\r\nimport com.startapp.sdk.adsbase.StartAppAd;\r\nimport com.startapp.sdk.adsbase.adlisteners.AdEventListener;\r\nimport com.unity3d.ads.IUnityAdsLoadListener;\r\nimport com.unity3d.ads.IUnityAdsShowListener;\r\nimport com.unity3d.ads.UnityAds;\r\nimport com.unity3d.ads.UnityAdsShowOptions;\r\nimport com.wortise.ads.rewarded.models.Reward;\r\n\r\npublic class MdcRewarded {\r\n    private static final String TAG = \"MDCRewarded\";\r\n    private final Activity activity;\r\n    private com.google.android.gms.ads.rewarded.RewardedAd adMobRewardedAd;\r\n    private com.google.android.gms.ads.rewarded.RewardedAd adManagerRewardedAd;\r\n    private com.facebook.ads.RewardedVideoAd fanRewardedVideoAd;\r\n    private StartAppAd startAppAd;\r\n    private MaxRewardedAd applovinMaxRewardedAd;\r\n    public AppLovinInterstitialAdDialog appLovinInterstitialAdDialog;\r\n    public AppLovinAd appLovinAd;\r\n    private com.wortise.ads.rewarded.RewardedAd wortiseRewardedAd;\r\n    private String adStatus = \"\";\r\n    private String adsType = \"\";\r\n    private String backupAdsType = \"\";\r\n    private String mRewardId = \"\";\r\n\r\n\r\n    private boolean legacyGDPR = false;\r\n    public MdcRewarded(Activity activity) {\r\n        this.activity = activity;\r\n    }\r\n\r\n    public MdcRewarded build(OnRewardedAdCompleteListener onComplete, OnRewardedAdDismissedListener onDismiss) {\r\n        loadRewardedAd(onComplete, onDismiss);\r\n        return this;\r\n    }\r\n\r\n    public MdcRewarded show(OnRewardedAdCompleteListener onComplete, OnRewardedAdDismissedListener onDismiss, OnRewardedAdErrorListener onError) {\r\n        showRewardedAd(onComplete, onDismiss, onError);\r\n        return this;\r\n    }\r\n\r\n    public MdcRewarded setAdStatus(String adStatus) {\r\n        this.adStatus = adStatus;\r\n        return this;\r\n    }\r\n\r\n    public MdcRewarded setAdType(String adsType) {\r\n        this.adsType = adsType;\r\n        return this;\r\n    }\r\n\r\n    public MdcRewarded setBackupAdType(String backupAdsType) {\r\n        this.backupAdsType = backupAdsType;\r\n        return this;\r\n    }\r\n    public MdcRewarded setRewardId(String mRewardId) {\r\n        this.mRewardId = mRewardId;\r\n        return this;\r\n    }\r\n    public MdcRewarded setLegacyGDPR(boolean legacyGDPR) {\r\n        this.legacyGDPR = legacyGDPR;\r\n        return this;\r\n    }\r\n\r\n    public void loadRewardedAd(OnRewardedAdCompleteListener onComplete, OnRewardedAdDismissedListener onDismiss) {\r\n        if (adStatus.equals(AD_STATUS_ON)) {\r\n            switch (adsType) {\r\n                case ADMOB:\r\n                case FAN_BIDDING_ADMOB:\r\n                    com.google.android.gms.ads.rewarded.RewardedAd.load(activity, mRewardId, AdsTools.getAdRequest(activity, legacyGDPR), new RewardedAdLoadCallback() {\r\n                        @Override\r\n                        public void onAdLoaded(@NonNull com.google.android.gms.ads.rewarded.RewardedAd ad) {\r\n                            adMobRewardedAd = ad;\r\n                            adMobRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {\r\n                                @Override\r\n                                public void onAdDismissedFullScreenContent() {\r\n                                    super.onAdDismissedFullScreenContent();\r\n                                    adMobRewardedAd = null;\r\n                                    loadRewardedAd(onComplete, onDismiss);\r\n                                    onDismiss.onRewardedAdDismissed();\r\n                                }\r\n\r\n                                @Override\r\n                                public void onAdFailedToShowFullScreenContent(@NonNull com.google.android.gms.ads.AdError adError) {\r\n                                    super.onAdFailedToShowFullScreenContent(adError);\r\n                                    adMobRewardedAd = null;\r\n                                }\r\n                            });\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad loaded\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {\r\n                            Log.d(TAG, loadAdError.toString());\r\n                            adMobRewardedAd = null;\r\n                            loadRewardedBackupAd(onComplete, onDismiss);\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"failed to load rewarded ad: \" + loadAdError.getMessage() + \", try to load backup ad: \" + backupAdsType);\r\n                        }\r\n                    });\r\n                    break;\r\n\r\n                case GOOGLE_AD_MANAGER:\r\n                case FAN_BIDDING_AD_MANAGER:\r\n                    com.google.android.gms.ads.rewarded.RewardedAd.load(activity, mRewardId, AdsTools.getGoogleAdManagerRequest(), new RewardedAdLoadCallback() {\r\n                        @Override\r\n                        public void onAdLoaded(@NonNull com.google.android.gms.ads.rewarded.RewardedAd ad) {\r\n                            adManagerRewardedAd = ad;\r\n                            adManagerRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {\r\n                                @Override\r\n                                public void onAdDismissedFullScreenContent() {\r\n                                    super.onAdDismissedFullScreenContent();\r\n                                    adManagerRewardedAd = null;\r\n                                    loadRewardedAd(onComplete, onDismiss);\r\n                                    onDismiss.onRewardedAdDismissed();\r\n                                }\r\n\r\n                                @Override\r\n                                public void onAdFailedToShowFullScreenContent(@NonNull com.google.android.gms.ads.AdError adError) {\r\n                                    super.onAdFailedToShowFullScreenContent(adError);\r\n                                    adManagerRewardedAd = null;\r\n                                }\r\n                            });\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad loaded\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {\r\n                            Log.d(TAG, loadAdError.toString());\r\n                            adManagerRewardedAd = null;\r\n                            loadRewardedBackupAd(onComplete, onDismiss);\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"failed to load rewarded ad: \" + loadAdError.getMessage() + \", try to load backup ad: \" + backupAdsType);\r\n                        }\r\n                    });\r\n                    break;\r\n\r\n                case FAN:\r\n                case FACEBOOK:\r\n                    fanRewardedVideoAd = new com.facebook.ads.RewardedVideoAd(activity, mRewardId);\r\n                    fanRewardedVideoAd.loadAd(fanRewardedVideoAd.buildLoadAdConfig()\r\n                            .withAdListener(new RewardedVideoAdListener() {\r\n                                @Override\r\n                                public void onRewardedVideoCompleted() {\r\n                                    onComplete.onRewardedAdComplete();\r\n                                    Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad complete\");\r\n                                }\r\n\r\n                                @Override\r\n                                public void onRewardedVideoClosed() {\r\n                                    loadRewardedAd(onComplete, onDismiss);\r\n                                    onDismiss.onRewardedAdDismissed();\r\n                                    Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad closed\");\r\n                                }\r\n\r\n                                @Override\r\n                                public void onError(Ad ad, AdError adError) {\r\n                                    loadRewardedBackupAd(onComplete, onDismiss);\r\n                                    Log.d(TAG, \"[\" + adsType + \"] \" + \"failed to load rewarded ad: \" + mRewardId + \", try to load backup ad: \" + backupAdsType);\r\n                                }\r\n\r\n                                @Override\r\n                                public void onAdLoaded(Ad ad) {\r\n                                    Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad loaded\");\r\n                                }\r\n\r\n                                @Override\r\n                                public void onAdClicked(Ad ad) {\r\n\r\n                                }\r\n\r\n                                @Override\r\n                                public void onLoggingImpression(Ad ad) {\r\n\r\n                                }\r\n                            })\r\n                            .build());\r\n                    break;\r\n\r\n                case STARTAPP:\r\n                    startAppAd = new StartAppAd(activity);\r\n                    startAppAd.setVideoListener(() -> {\r\n                        onComplete.onRewardedAdComplete();\r\n                        Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad complete\");\r\n                    });\r\n                    startAppAd.loadAd(StartAppAd.AdMode.REWARDED_VIDEO, new AdEventListener() {\r\n                        @Override\r\n                        public void onReceiveAd(@NonNull com.startapp.sdk.adsbase.Ad ad) {\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad loaded\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onFailedToReceiveAd(@Nullable com.startapp.sdk.adsbase.Ad ad) {\r\n                            loadRewardedBackupAd(onComplete, onDismiss);\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"failed to load rewarded ad, try to load backup ad: \" + backupAdsType);\r\n\r\n                        }\r\n                    });\r\n                    break;\r\n\r\n                case UNITY:\r\n                    UnityAds.load(mRewardId, new IUnityAdsLoadListener() {\r\n                        @Override\r\n                        public void onUnityAdsAdLoaded(String placementId) {\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad complete\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onUnityAdsFailedToLoad(String placementId, UnityAds.UnityAdsLoadError error, String message) {\r\n                            Log.e(TAG, \"[\" + adsType + \"] \" + \"rewarded ad failed to load ad for \" + placementId + \" with error: [\" + error + \"] \" + message);\r\n                            loadRewardedBackupAd(onComplete, onDismiss);\r\n                        }\r\n                    });\r\n                    break;\r\n\r\n                case APPLOVIN:\r\n                case APPLOVIN_MAX:\r\n                case FAN_BIDDING_APPLOVIN_MAX:\r\n                    applovinMaxRewardedAd = MaxRewardedAd.getInstance(mRewardId, activity);\r\n                    applovinMaxRewardedAd.loadAd();\r\n                    applovinMaxRewardedAd.setListener(new MaxRewardedAdListener() {\r\n                        @Override\r\n                        public void onUserRewarded(@NonNull MaxAd maxAd, @NonNull MaxReward maxReward) {\r\n                            onComplete.onRewardedAdComplete();\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad complete\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onRewardedVideoStarted(@NonNull MaxAd maxAd) {\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded video started\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onRewardedVideoCompleted(@NonNull MaxAd maxAd) {\r\n                            onComplete.onRewardedAdComplete();\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded video complete\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdLoaded(@NonNull MaxAd maxAd) {\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad loaded\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdDisplayed(@NonNull MaxAd maxAd) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdHidden(@NonNull MaxAd maxAd) {\r\n                            loadRewardedAd(onComplete, onDismiss);\r\n                            onComplete.onRewardedAdComplete();\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad hidden\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdClicked(@NonNull MaxAd maxAd) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdLoadFailed(@NonNull String s, @NonNull MaxError maxError) {\r\n                            loadRewardedBackupAd(onComplete, onDismiss);\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"failed to load rewarded ad: \" + maxError.getMessage() + \", try to load backup ad: \" + backupAdsType);\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdDisplayFailed(@NonNull MaxAd maxAd, @NonNull MaxError maxError) {\r\n                            loadRewardedBackupAd(onComplete, onDismiss);\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"failed to load rewarded ad: \" + maxError.getMessage() + \", try to load backup ad: \" + backupAdsType);\r\n                        }\r\n                    });\r\n                    break;\r\n\r\n                case APPLOVIN_DISCOVERY:\r\n                    AdRequest.Builder builder = new AdRequest.Builder();\r\n                    Bundle interstitialExtras = new Bundle();\r\n                    interstitialExtras.putString(\"zone_id\", mRewardId);\r\n                    builder.addCustomEventExtrasBundle(AppLovinCustomEventInterstitial.class, interstitialExtras);\r\n                    AppLovinSdk.getInstance(activity).getAdService().loadNextAd(AppLovinAdSize.INTERSTITIAL, new AppLovinAdLoadListener() {\r\n                        @Override\r\n                        public void adReceived(AppLovinAd ad) {\r\n                            appLovinAd = ad;\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad loaded\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void failedToReceiveAd(int errorCode) {\r\n                            loadRewardedBackupAd(onComplete, onDismiss);\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"failed to load rewarded ad: \" + errorCode + \", try to load backup ad: \" + backupAdsType);\r\n                        }\r\n                    });\r\n                    appLovinInterstitialAdDialog = AppLovinInterstitialAd.create(AppLovinSdk.getInstance(activity), activity);\r\n                    appLovinInterstitialAdDialog.setAdDisplayListener(new AppLovinAdDisplayListener() {\r\n                        @Override\r\n                        public void adDisplayed(AppLovinAd appLovinAd) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void adHidden(AppLovinAd appLovinAd) {\r\n                            loadRewardedAd(onComplete, onDismiss);\r\n                            onComplete.onRewardedAdComplete();\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"ad hidden\");\r\n                        }\r\n                    });\r\n                    break;\r\n\r\n                case IRONSOURCE:\r\n                case FAN_BIDDING_IRONSOURCE:\r\n                    IronSource.setLevelPlayRewardedVideoListener(new LevelPlayRewardedVideoListener() {\r\n                        @Override\r\n                        public void onAdAvailable(AdInfo adInfo) {\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad is ready\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdUnavailable() {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdOpened(AdInfo adInfo) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdShowFailed(IronSourceError ironSourceError, AdInfo adInfo) {\r\n                            loadRewardedBackupAd(onComplete, onDismiss);\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"failed to load rewarded ad: \" + ironSourceError.getErrorMessage() + \", try to load backup ad: \" + backupAdsType);\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdClicked(Placement placement, AdInfo adInfo) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdRewarded(Placement placement, AdInfo adInfo) {\r\n                            onComplete.onRewardedAdComplete();\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad complete\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdClosed(AdInfo adInfo) {\r\n                            loadRewardedAd(onComplete, onDismiss);\r\n                        }\r\n                    });\r\n                    break;\r\n\r\n                case WORTISE:\r\n                    wortiseRewardedAd = new com.wortise.ads.rewarded.RewardedAd(activity, mRewardId);\r\n                    wortiseRewardedAd.setListener(new com.wortise.ads.rewarded.RewardedAd.Listener() {\r\n                        @Override\r\n                        public void onRewardedClicked(@NonNull com.wortise.ads.rewarded.RewardedAd rewardedAd) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onRewardedCompleted(@NonNull com.wortise.ads.rewarded.RewardedAd rewardedAd, @NonNull Reward reward) {\r\n                            onComplete.onRewardedAdComplete();\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad complete\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onRewardedDismissed(@NonNull com.wortise.ads.rewarded.RewardedAd rewardedAd) {\r\n                            loadRewardedAd(onComplete, onDismiss);\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad dismissed\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onRewardedFailed(@NonNull com.wortise.ads.rewarded.RewardedAd rewardedAd, @NonNull com.wortise.ads.AdError adError) {\r\n                            loadRewardedBackupAd(onComplete, onDismiss);\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"failed to load rewarded ad: \" + adError + \", try to load backup ad: \" + backupAdsType);\r\n                        }\r\n\r\n                        @Override\r\n                        public void onRewardedLoaded(@NonNull com.wortise.ads.rewarded.RewardedAd rewardedAd) {\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"rewarded ad loaded\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onRewardedShown(@NonNull com.wortise.ads.rewarded.RewardedAd rewardedAd) {\r\n\r\n                        }\r\n                    });\r\n                    wortiseRewardedAd.loadAd();\r\n                    break;\r\n            }\r\n        }\r\n    }\r\n\r\n    public void loadRewardedBackupAd(OnRewardedAdCompleteListener onComplete, OnRewardedAdDismissedListener onDismiss) {\r\n        if (adStatus.equals(AD_STATUS_ON)) {\r\n            switch (backupAdsType) {\r\n                case ADMOB:\r\n                case FAN_BIDDING_ADMOB:\r\n                    com.google.android.gms.ads.rewarded.RewardedAd.load(activity, mRewardId, AdsTools.getAdRequest(activity, legacyGDPR), new RewardedAdLoadCallback() {\r\n                        @Override\r\n                        public void onAdLoaded(@NonNull com.google.android.gms.ads.rewarded.RewardedAd ad) {\r\n                            adMobRewardedAd = ad;\r\n                            adMobRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {\r\n                                @Override\r\n                                public void onAdDismissedFullScreenContent() {\r\n                                    super.onAdDismissedFullScreenContent();\r\n                                    adMobRewardedAd = null;\r\n                                    loadRewardedAd(onComplete, onDismiss);\r\n                                    onDismiss.onRewardedAdDismissed();\r\n                                }\r\n\r\n                                @Override\r\n                                public void onAdFailedToShowFullScreenContent(@NonNull com.google.android.gms.ads.AdError adError) {\r\n                                    super.onAdFailedToShowFullScreenContent(adError);\r\n                                    adMobRewardedAd = null;\r\n                                }\r\n                            });\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded ad loaded\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {\r\n                            Log.d(TAG, loadAdError.toString());\r\n                            adMobRewardedAd = null;\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"failed to load rewarded ad: \" + loadAdError.getMessage() + \", try to load backup ad: \" + backupAdsType);\r\n                        }\r\n                    });\r\n                    break;\r\n\r\n                case GOOGLE_AD_MANAGER:\r\n                case FAN_BIDDING_AD_MANAGER:\r\n                    com.google.android.gms.ads.rewarded.RewardedAd.load(activity, mRewardId, AdsTools.getGoogleAdManagerRequest(), new RewardedAdLoadCallback() {\r\n                        @Override\r\n                        public void onAdLoaded(@NonNull com.google.android.gms.ads.rewarded.RewardedAd ad) {\r\n                            adManagerRewardedAd = ad;\r\n                            adManagerRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {\r\n                                @Override\r\n                                public void onAdDismissedFullScreenContent() {\r\n                                    super.onAdDismissedFullScreenContent();\r\n                                    adManagerRewardedAd = null;\r\n                                    loadRewardedAd(onComplete, onDismiss);\r\n                                    onDismiss.onRewardedAdDismissed();\r\n                                }\r\n\r\n                                @Override\r\n                                public void onAdFailedToShowFullScreenContent(@NonNull com.google.android.gms.ads.AdError adError) {\r\n                                    super.onAdFailedToShowFullScreenContent(adError);\r\n                                    adManagerRewardedAd = null;\r\n                                }\r\n                            });\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded ad loaded\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {\r\n                            Log.d(TAG, loadAdError.toString());\r\n                            adManagerRewardedAd = null;\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"failed to load rewarded ad: \" + loadAdError.getMessage() + \", try to load backup ad: \" + backupAdsType);\r\n                        }\r\n                    });\r\n                    break;\r\n\r\n                case FAN:\r\n                case FACEBOOK:\r\n                    fanRewardedVideoAd = new com.facebook.ads.RewardedVideoAd(activity, mRewardId);\r\n                    fanRewardedVideoAd.loadAd(fanRewardedVideoAd.buildLoadAdConfig()\r\n                            .withAdListener(new RewardedVideoAdListener() {\r\n                                @Override\r\n                                public void onRewardedVideoCompleted() {\r\n                                    onComplete.onRewardedAdComplete();\r\n                                    Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded ad complete\");\r\n                                }\r\n\r\n                                @Override\r\n                                public void onRewardedVideoClosed() {\r\n                                    loadRewardedAd(onComplete, onDismiss);\r\n                                    onDismiss.onRewardedAdDismissed();\r\n                                    Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded ad closed\");\r\n                                }\r\n\r\n                                @Override\r\n                                public void onError(Ad ad, AdError adError) {\r\n                                    Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"failed to load rewarded ad: \" + mRewardId + \", try to load backup ad: \" + backupAdsType);\r\n                                }\r\n\r\n                                @Override\r\n                                public void onAdLoaded(Ad ad) {\r\n                                    Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded ad loaded\");\r\n                                }\r\n\r\n                                @Override\r\n                                public void onAdClicked(Ad ad) {\r\n\r\n                                }\r\n\r\n                                @Override\r\n                                public void onLoggingImpression(Ad ad) {\r\n\r\n                                }\r\n                            })\r\n                            .build());\r\n                    break;\r\n\r\n                case STARTAPP:\r\n                    startAppAd = new StartAppAd(activity);\r\n                    startAppAd.setVideoListener(() -> {\r\n                        onComplete.onRewardedAdComplete();\r\n                        Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded ad complete\");\r\n                    });\r\n                    startAppAd.loadAd(StartAppAd.AdMode.REWARDED_VIDEO, new AdEventListener() {\r\n                        @Override\r\n                        public void onReceiveAd(@NonNull com.startapp.sdk.adsbase.Ad ad) {\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded ad loaded\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onFailedToReceiveAd(@Nullable com.startapp.sdk.adsbase.Ad ad) {\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"failed to load rewarded ad, try to load backup ad: \" + backupAdsType);\r\n                        }\r\n                    });\r\n                    break;\r\n\r\n                case UNITY:\r\n                    UnityAds.load(mRewardId, new IUnityAdsLoadListener() {\r\n                        @Override\r\n                        public void onUnityAdsAdLoaded(String placementId) {\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded ad complete\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onUnityAdsFailedToLoad(String placementId, UnityAds.UnityAdsLoadError error, String message) {\r\n                            Log.e(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded ad failed to load ad for \" + placementId + \" with error: [\" + error + \"] \" + message);\r\n                        }\r\n                    });\r\n                    break;\r\n\r\n                case APPLOVIN:\r\n                case APPLOVIN_MAX:\r\n                case FAN_BIDDING_APPLOVIN_MAX:\r\n                    applovinMaxRewardedAd = MaxRewardedAd.getInstance(mRewardId, activity);\r\n                    applovinMaxRewardedAd.setListener(new MaxRewardedAdListener() {\r\n                        @Override\r\n                        public void onUserRewarded(@NonNull MaxAd maxAd, @NonNull MaxReward maxReward) {\r\n                            onComplete.onRewardedAdComplete();\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"user earn rewards\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onRewardedVideoStarted(@NonNull MaxAd maxAd) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onRewardedVideoCompleted(@NonNull MaxAd maxAd) {\r\n                            onComplete.onRewardedAdComplete();\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded video complete\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdLoaded(@NonNull MaxAd maxAd) {\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded ad loaded\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdDisplayed(@NonNull MaxAd maxAd) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdHidden(@NonNull MaxAd maxAd) {\r\n                            loadRewardedAd(onComplete, onDismiss);\r\n                            onComplete.onRewardedAdComplete();\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup]\" + \"rewarded ad hidden\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdClicked(@NonNull MaxAd maxAd) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdLoadFailed(@NonNull String s, @NonNull MaxError maxError) {\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"failed to load rewarded ad: \" + maxError.getMessage() + \", try to load backup ad: \" + backupAdsType);\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdDisplayFailed(@NonNull MaxAd maxAd, @NonNull MaxError maxError) {\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"failed to load rewarded ad: \" + maxError.getMessage() + \", try to load backup ad: \" + backupAdsType);\r\n                        }\r\n                    });\r\n                    applovinMaxRewardedAd.loadAd();\r\n                    break;\r\n\r\n                case APPLOVIN_DISCOVERY:\r\n                    AdRequest.Builder builder = new AdRequest.Builder();\r\n                    Bundle interstitialExtras = new Bundle();\r\n                    interstitialExtras.putString(\"zone_id\", mRewardId);\r\n                    builder.addCustomEventExtrasBundle(AppLovinCustomEventInterstitial.class, interstitialExtras);\r\n                    AppLovinSdk.getInstance(activity).getAdService().loadNextAd(AppLovinAdSize.INTERSTITIAL, new AppLovinAdLoadListener() {\r\n                        @Override\r\n                        public void adReceived(AppLovinAd ad) {\r\n                            appLovinAd = ad;\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded ad loaded\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void failedToReceiveAd(int errorCode) {\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"failed to load rewarded ad: \" + errorCode + \", try to load backup ad: \" + backupAdsType);\r\n                        }\r\n                    });\r\n                    appLovinInterstitialAdDialog = AppLovinInterstitialAd.create(AppLovinSdk.getInstance(activity), activity);\r\n                    appLovinInterstitialAdDialog.setAdDisplayListener(new AppLovinAdDisplayListener() {\r\n                        @Override\r\n                        public void adDisplayed(AppLovinAd appLovinAd) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void adHidden(AppLovinAd appLovinAd) {\r\n                            loadRewardedAd(onComplete, onDismiss);\r\n                            onComplete.onRewardedAdComplete();\r\n                            Log.d(TAG, \"[\" + adsType + \"] \" + \"ad hidden\");\r\n                        }\r\n                    });\r\n                    break;\r\n\r\n                case IRONSOURCE:\r\n                case FAN_BIDDING_IRONSOURCE:\r\n                    IronSource.setLevelPlayRewardedVideoListener(new LevelPlayRewardedVideoListener() {\r\n                        @Override\r\n                        public void onAdAvailable(AdInfo adInfo) {\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded ad is ready\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdUnavailable() {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdOpened(AdInfo adInfo) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdShowFailed(IronSourceError ironSourceError, AdInfo adInfo) {\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"failed to load rewarded ad: \" + ironSourceError.getErrorMessage() + \", try to load backup ad: \" + backupAdsType);\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdClicked(Placement placement, AdInfo adInfo) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdRewarded(Placement placement, AdInfo adInfo) {\r\n                            onComplete.onRewardedAdComplete();\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded ad complete\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onAdClosed(AdInfo adInfo) {\r\n                            loadRewardedAd(onComplete, onDismiss);\r\n                        }\r\n                    });\r\n                    break;\r\n\r\n                case WORTISE:\r\n                    wortiseRewardedAd = new com.wortise.ads.rewarded.RewardedAd(activity, mRewardId);\r\n                    wortiseRewardedAd.setListener(new com.wortise.ads.rewarded.RewardedAd.Listener() {\r\n                        @Override\r\n                        public void onRewardedClicked(@NonNull com.wortise.ads.rewarded.RewardedAd rewardedAd) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onRewardedCompleted(@NonNull com.wortise.ads.rewarded.RewardedAd rewardedAd, @NonNull Reward reward) {\r\n                            onComplete.onRewardedAdComplete();\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded ad complete\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onRewardedDismissed(@NonNull com.wortise.ads.rewarded.RewardedAd rewardedAd) {\r\n                            loadRewardedAd(onComplete, onDismiss);\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded ad dismissed\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onRewardedFailed(@NonNull com.wortise.ads.rewarded.RewardedAd rewardedAd, @NonNull com.wortise.ads.AdError adError) {\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"failed to load rewarded ad: \" + adError + \", try to load backup ad: \" + backupAdsType);\r\n                        }\r\n\r\n                        @Override\r\n                        public void onRewardedLoaded(@NonNull com.wortise.ads.rewarded.RewardedAd rewardedAd) {\r\n                            Log.d(TAG, \"[\" + backupAdsType + \"] [backup] \" + \"rewarded ad loaded\");\r\n                        }\r\n\r\n                        @Override\r\n                        public void onRewardedShown(@NonNull com.wortise.ads.rewarded.RewardedAd rewardedAd) {\r\n\r\n                        }\r\n                    });\r\n                    wortiseRewardedAd.loadAd();\r\n                    break;\r\n            }\r\n        }\r\n    }\r\n\r\n    public void showRewardedAd(OnRewardedAdCompleteListener onComplete, OnRewardedAdDismissedListener onDismiss, OnRewardedAdErrorListener onError) {\r\n        if (adStatus.equals(AD_STATUS_ON)) {\r\n            switch (adsType) {\r\n                case ADMOB:\r\n                case FAN_BIDDING_ADMOB:\r\n                    if (adMobRewardedAd != null) {\r\n                        adMobRewardedAd.show(activity, rewardItem -> {\r\n                            onComplete.onRewardedAdComplete();\r\n                            Log.d(TAG, \"The user earned the reward.\");\r\n                        });\r\n                    } else {\r\n                        showRewardedBackupAd(onComplete, onDismiss, onError);\r\n                    }\r\n                    break;\r\n\r\n                case GOOGLE_AD_MANAGER:\r\n                case FAN_BIDDING_AD_MANAGER:\r\n                    if (adManagerRewardedAd != null) {\r\n                        adManagerRewardedAd.show(activity, rewardItem -> {\r\n                            onComplete.onRewardedAdComplete();\r\n                            Log.d(TAG, \"The user earned the reward.\");\r\n                        });\r\n                    } else {\r\n                        showRewardedBackupAd(onComplete, onDismiss, onError);\r\n                    }\r\n                    break;\r\n\r\n                case FAN:\r\n                case FACEBOOK:\r\n                    if (fanRewardedVideoAd != null && fanRewardedVideoAd.isAdLoaded()) {\r\n                        fanRewardedVideoAd.show();\r\n                    } else {\r\n                        showRewardedBackupAd(onComplete, onDismiss, onError);\r\n                    }\r\n                    break;\r\n\r\n                case STARTAPP:\r\n                    if (startAppAd != null) {\r\n                        startAppAd.showAd();\r\n                    } else {\r\n                        showRewardedBackupAd(onComplete, onDismiss, onError);\r\n                    }\r\n                    break;\r\n\r\n                case UNITY:\r\n                    UnityAds.show(activity, mRewardId, new UnityAdsShowOptions(), new IUnityAdsShowListener() {\r\n                        @Override\r\n                        public void onUnityAdsShowFailure(String placementId, UnityAds.UnityAdsShowError error, String message) {\r\n                            showRewardedBackupAd(onComplete, onDismiss, onError);\r\n                        }\r\n\r\n                        @Override\r\n                        public void onUnityAdsShowStart(String placementId) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onUnityAdsShowClick(String placementId) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onUnityAdsShowComplete(String placementId, UnityAds.UnityAdsShowCompletionState state) {\r\n                            onComplete.onRewardedAdComplete();\r\n                            loadRewardedAd(onComplete, onDismiss);\r\n                        }\r\n                    });\r\n                    break;\r\n\r\n                case APPLOVIN:\r\n                case APPLOVIN_MAX:\r\n                case FAN_BIDDING_APPLOVIN_MAX:\r\n                    if (applovinMaxRewardedAd != null && applovinMaxRewardedAd.isReady()) {\r\n                        applovinMaxRewardedAd.showAd();\r\n                    } else {\r\n                        showRewardedBackupAd(onComplete, onDismiss, onError);\r\n                    }\r\n                    break;\r\n\r\n                case APPLOVIN_DISCOVERY:\r\n                    if (appLovinInterstitialAdDialog != null) {\r\n                        appLovinInterstitialAdDialog.showAndRender(appLovinAd);\r\n                    } else {\r\n                        showRewardedBackupAd(onComplete, onDismiss, onError);\r\n                    }\r\n                    break;\r\n\r\n                case IRONSOURCE:\r\n                case FAN_BIDDING_IRONSOURCE:\r\n                    if (IronSource.isRewardedVideoAvailable()) {\r\n                        IronSource.showRewardedVideo(mRewardId);\r\n                    } else {\r\n                        showRewardedBackupAd(onComplete, onDismiss, onError);\r\n                    }\r\n                    break;\r\n\r\n                case WORTISE:\r\n                    if (wortiseRewardedAd != null && wortiseRewardedAd.isAvailable()) {\r\n                        wortiseRewardedAd.showAd();\r\n                    } else {\r\n                        showRewardedBackupAd(onComplete, onDismiss, onError);\r\n                    }\r\n                    break;\r\n\r\n                default:\r\n                    onError.onRewardedAdError();\r\n                    break;\r\n            }\r\n        }\r\n\r\n    }\r\n\r\n    public void showRewardedBackupAd(OnRewardedAdCompleteListener onComplete, OnRewardedAdDismissedListener onDismiss, OnRewardedAdErrorListener onError) {\r\n        if (adStatus.equals(AD_STATUS_ON)) {\r\n            switch (backupAdsType) {\r\n                case ADMOB:\r\n                case FAN_BIDDING_ADMOB:\r\n                    if (adMobRewardedAd != null) {\r\n                        adMobRewardedAd.show(activity, rewardItem -> {\r\n                            onComplete.onRewardedAdComplete();\r\n                            Log.d(TAG, \"The user earned the reward.\");\r\n                        });\r\n                    } else {\r\n                        onError.onRewardedAdError();\r\n                    }\r\n                    break;\r\n\r\n                case GOOGLE_AD_MANAGER:\r\n                case FAN_BIDDING_AD_MANAGER:\r\n                    if (adManagerRewardedAd != null) {\r\n                        adManagerRewardedAd.show(activity, rewardItem -> {\r\n                            onComplete.onRewardedAdComplete();\r\n                            Log.d(TAG, \"The user earned the reward.\");\r\n                        });\r\n                    } else {\r\n                        onError.onRewardedAdError();\r\n                    }\r\n                    break;\r\n\r\n                case FAN:\r\n                case FACEBOOK:\r\n                    if (fanRewardedVideoAd != null && fanRewardedVideoAd.isAdLoaded()) {\r\n                        fanRewardedVideoAd.show();\r\n                    } else {\r\n                        onError.onRewardedAdError();\r\n                    }\r\n                    break;\r\n\r\n                case STARTAPP:\r\n                    if (startAppAd != null) {\r\n                        startAppAd.showAd();\r\n                    } else {\r\n                        onError.onRewardedAdError();\r\n                    }\r\n                    break;\r\n\r\n                case UNITY:\r\n                    UnityAds.show(activity, mRewardId, new UnityAdsShowOptions(), new IUnityAdsShowListener() {\r\n                        @Override\r\n                        public void onUnityAdsShowFailure(String placementId, UnityAds.UnityAdsShowError error, String message) {\r\n                            onError.onRewardedAdError();\r\n                        }\r\n\r\n                        @Override\r\n                        public void onUnityAdsShowStart(String placementId) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onUnityAdsShowClick(String placementId) {\r\n\r\n                        }\r\n\r\n                        @Override\r\n                        public void onUnityAdsShowComplete(String placementId, UnityAds.UnityAdsShowCompletionState state) {\r\n                            onComplete.onRewardedAdComplete();\r\n                            loadRewardedAd(onComplete, onDismiss);\r\n                        }\r\n                    });\r\n                    break;\r\n\r\n                case APPLOVIN:\r\n                case APPLOVIN_MAX:\r\n                case FAN_BIDDING_APPLOVIN_MAX:\r\n                    if (applovinMaxRewardedAd != null && applovinMaxRewardedAd.isReady()) {\r\n                        applovinMaxRewardedAd.showAd();\r\n                    } else {\r\n                        onError.onRewardedAdError();\r\n                    }\r\n                    break;\r\n\r\n                case APPLOVIN_DISCOVERY:\r\n                    if (appLovinInterstitialAdDialog != null) {\r\n                        appLovinInterstitialAdDialog.showAndRender(appLovinAd);\r\n                    } else {\r\n                        onError.onRewardedAdError();\r\n                    }\r\n                    break;\r\n\r\n                case IRONSOURCE:\r\n                case FAN_BIDDING_IRONSOURCE:\r\n                    if (IronSource.isRewardedVideoAvailable()) {\r\n                        IronSource.showRewardedVideo(mRewardId);\r\n                    } else {\r\n                        onError.onRewardedAdError();\r\n                    }\r\n                    break;\r\n\r\n                case WORTISE:\r\n                    if (wortiseRewardedAd != null && wortiseRewardedAd.isAvailable()) {\r\n                        wortiseRewardedAd.showAd();\r\n                    } else {\r\n                        onError.onRewardedAdError();\r\n                    }\r\n                    break;\r\n\r\n                default:\r\n                    onError.onRewardedAdError();\r\n                    break;\r\n            }\r\n        }\r\n\r\n    }\r\n\r\n    public void destroyRewardedAd() {\r\n        if (adStatus.equals(AD_STATUS_ON)) {\r\n            switch (adsType) {\r\n                case FAN:\r\n                case FACEBOOK:\r\n                    if (fanRewardedVideoAd != null) {\r\n                        fanRewardedVideoAd.destroy();\r\n                        fanRewardedVideoAd = null;\r\n                    }\r\n                    break;\r\n            }\r\n\r\n            switch (backupAdsType) {\r\n                case FAN:\r\n                case FACEBOOK:\r\n                    if (fanRewardedVideoAd != null) {\r\n                        fanRewardedVideoAd.destroy();\r\n                        fanRewardedVideoAd = null;\r\n                    }\r\n                    break;\r\n            }\r\n        }\r\n    }\r\n\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/adslibrary/src/main/java/com/marketdigitalcode/adslibrary/MdcRewarded.java b/adslibrary/src/main/java/com/marketdigitalcode/adslibrary/MdcRewarded.java
+--- a/adslibrary/src/main/java/com/marketdigitalcode/adslibrary/MdcRewarded.java	(revision 8861f21ed94f01b208a45c36b53f29ea9d1cf9e2)
++++ b/adslibrary/src/main/java/com/marketdigitalcode/adslibrary/MdcRewarded.java	(date 1701694194843)
+@@ -6,6 +6,7 @@
+ import static com.marketdigitalcode.adslibrary.util.AdsConstant.APPLOVIN;
+ import static com.marketdigitalcode.adslibrary.util.AdsConstant.APPLOVIN_DISCOVERY;
+ import static com.marketdigitalcode.adslibrary.util.AdsConstant.APPLOVIN_MAX;
++import static com.marketdigitalcode.adslibrary.util.AdsConstant.APPNEXT;
+ import static com.marketdigitalcode.adslibrary.util.AdsConstant.FACEBOOK;
+ import static com.marketdigitalcode.adslibrary.util.AdsConstant.FAN;
+ import static com.marketdigitalcode.adslibrary.util.AdsConstant.FAN_BIDDING_ADMOB;
+@@ -38,6 +39,13 @@
+ 
+ import com.applovin.sdk.AppLovinAdSize;
+ import com.applovin.sdk.AppLovinSdk;
++import com.appnext.ads.fullscreen.RewardedVideo;
++
++import com.appnext.core.AppnextAdCreativeType;
++import com.appnext.core.callbacks.OnAdClosed;
++import com.appnext.core.callbacks.OnAdError;
++import com.appnext.core.callbacks.OnAdLoaded;
++import com.appnext.core.callbacks.OnVideoEnded;
+ import com.facebook.ads.Ad;
+ import com.facebook.ads.AdError;
+ import com.facebook.ads.RewardedVideoAdListener;
+@@ -69,6 +77,7 @@
+     private com.google.android.gms.ads.rewarded.RewardedAd adMobRewardedAd;
+     private com.google.android.gms.ads.rewarded.RewardedAd adManagerRewardedAd;
+     private com.facebook.ads.RewardedVideoAd fanRewardedVideoAd;
++    private RewardedVideo appNextrewardedVideo;
+     private StartAppAd startAppAd;
+     private MaxRewardedAd applovinMaxRewardedAd;
+     public AppLovinInterstitialAdDialog appLovinInterstitialAdDialog;
+@@ -267,6 +276,39 @@
+                     });
+                     break;
+ 
++                case APPNEXT:
++                    appNextrewardedVideo = new RewardedVideo(activity,mRewardId);
++                    appNextrewardedVideo.loadAd();
++                    appNextrewardedVideo.setMode(RewardedVideo.VIDEO_MODE_NORMAL);
++                    appNextrewardedVideo.setOnAdLoadedCallback(new OnAdLoaded() {
++                        @Override
++                        public void adLoaded(String s, AppnextAdCreativeType appnextAdCreativeType) {
++                            Log.d(TAG, "[" + adsType + "] " + "rewarded ad loaded");
++                        }
++                    });
++                    appNextrewardedVideo.setOnAdClosedCallback(new OnAdClosed() {
++                        @Override
++                        public void onAdClosed() {
++                            loadRewardedAd(onComplete, onDismiss);
++                            onDismiss.onRewardedAdDismissed();
++                        }
++                    });
++                    appNextrewardedVideo.setOnVideoEndedCallback(new OnVideoEnded() {
++                        @Override
++                        public void videoEnded() {
++                            onComplete.onRewardedAdComplete();
++                        }
++                    });
++                    appNextrewardedVideo.setOnAdErrorCallback(new OnAdError() {
++                        @Override
++                        public void adError(String s) {
++                            loadRewardedBackupAd(onComplete, onDismiss);
++                            Log.d(TAG, "[" + adsType + "] " + "failed to load rewarded ad: " + s + ", try to load backup ad: " + backupAdsType);
++                        }
++                    });
++                    appNextrewardedVideo.setRewardedServerSidePostback("TransactionId", "UserId", "TypeCurrency", "Amount", "CustomParameter");
++
++                    break;
+                 case APPLOVIN:
+                 case APPLOVIN_MAX:
+                 case FAN_BIDDING_APPLOVIN_MAX:
+@@ -586,7 +628,38 @@
+                         }
+                     });
+                     break;
++                case APPNEXT:
++                    appNextrewardedVideo = new RewardedVideo(activity,mRewardId);
++                    appNextrewardedVideo.loadAd();
++                    appNextrewardedVideo.setMode(RewardedVideo.VIDEO_MODE_NORMAL);
++                    appNextrewardedVideo.setOnAdLoadedCallback(new OnAdLoaded() {
++                        @Override
++                        public void adLoaded(String s, AppnextAdCreativeType appnextAdCreativeType) {
++                            Log.d(TAG, "[" + adsType + "] " + "rewarded ad loaded");
++                        }
++                    });
++                    appNextrewardedVideo.setOnAdClosedCallback(new OnAdClosed() {
++                        @Override
++                        public void onAdClosed() {
++                            loadRewardedAd(onComplete, onDismiss);
++                            onDismiss.onRewardedAdDismissed();
++                        }
++                    });
++                    appNextrewardedVideo.setOnVideoEndedCallback(new OnVideoEnded() {
++                        @Override
++                        public void videoEnded() {
++                            onComplete.onRewardedAdComplete();
++                        }
++                    });
++                    appNextrewardedVideo.setOnAdErrorCallback(new OnAdError() {
++                        @Override
++                        public void adError(String s) {
++                            Log.d(TAG, "[" + adsType + "] " + "failed to load rewarded ad: " + s + ", try to load backup ad: " + backupAdsType);
++                        }
++                    });
++                    appNextrewardedVideo.setRewardedServerSidePostback("TransactionId", "UserId", "TypeCurrency", "Amount", "CustomParameter");
+ 
++                    break;
+                 case APPLOVIN:
+                 case APPLOVIN_MAX:
+                 case FAN_BIDDING_APPLOVIN_MAX:
+@@ -827,7 +900,13 @@
+                         }
+                     });
+                     break;
+-
++                case APPNEXT:
++                    if (appNextrewardedVideo.isAdLoaded()) {
++                        appNextrewardedVideo.showAd();
++                    } else {
++                        showRewardedBackupAd(onComplete, onDismiss, onError);
++                    }
++                    break;
+                 case APPLOVIN:
+                 case APPLOVIN_MAX:
+                 case FAN_BIDDING_APPLOVIN_MAX:
+@@ -939,6 +1018,13 @@
+                         }
+                     });
+                     break;
++                case APPNEXT:
++                    if (appNextrewardedVideo.isAdLoaded()) {
++                        appNextrewardedVideo.showAd();
++                    } else {
++                        onError.onRewardedAdError();
++                    }
++                    break;
+ 
+                 case APPLOVIN:
+                 case APPLOVIN_MAX:
+Index: adslibrary/src/main/java/com/marketdigitalcode/adslibrary/util/NativeAdViewHolder.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/adslibrary/src/main/java/com/marketdigitalcode/adslibrary/util/NativeAdViewHolder.java b/adslibrary/src/main/java/com/marketdigitalcode/adslibrary/util/NativeAdViewHolder.java
+new file mode 100644
+--- /dev/null	(date 1701695892693)
++++ b/adslibrary/src/main/java/com/marketdigitalcode/adslibrary/util/NativeAdViewHolder.java	(date 1701695892693)
+@@ -0,0 +1,1135 @@
++package com.marketdigitalcode.adslibrary.util;
++
++
++
++import static com.marketdigitalcode.adslibrary.util.AdsConstant.ADMOB;
++import static com.marketdigitalcode.adslibrary.util.AdsConstant.AD_STATUS_ON;
++import static com.marketdigitalcode.adslibrary.util.AdsConstant.APPLOVIN;
++import static com.marketdigitalcode.adslibrary.util.AdsConstant.APPLOVIN_DISCOVERY;
++import static com.marketdigitalcode.adslibrary.util.AdsConstant.APPLOVIN_MAX;
++import static com.marketdigitalcode.adslibrary.util.AdsConstant.FACEBOOK;
++import static com.marketdigitalcode.adslibrary.util.AdsConstant.FAN;
++import static com.marketdigitalcode.adslibrary.util.AdsConstant.FAN_BIDDING_ADMOB;
++import static com.marketdigitalcode.adslibrary.util.AdsConstant.FAN_BIDDING_AD_MANAGER;
++import static com.marketdigitalcode.adslibrary.util.AdsConstant.FAN_BIDDING_APPLOVIN_MAX;
++import static com.marketdigitalcode.adslibrary.util.AdsConstant.GOOGLE_AD_MANAGER;
++import static com.marketdigitalcode.adslibrary.util.AdsConstant.NONE;
++import static com.marketdigitalcode.adslibrary.util.AdsConstant.STARTAPP;
++import static com.marketdigitalcode.adslibrary.util.AdsConstant.WORTISE;
++
++import android.annotation.SuppressLint;
++import android.app.Activity;
++import android.content.Context;
++import android.graphics.drawable.ColorDrawable;
++import android.os.Bundle;
++import android.util.Log;
++import android.view.LayoutInflater;
++import android.view.View;
++import android.view.ViewGroup;
++import android.widget.Button;
++import android.widget.FrameLayout;
++import android.widget.ImageView;
++import android.widget.LinearLayout;
++import android.widget.TextView;
++
++import androidx.annotation.NonNull;
++import androidx.core.content.ContextCompat;
++import androidx.recyclerview.widget.RecyclerView;
++
++import com.applovin.adview.AppLovinAdView;
++import com.applovin.mediation.MaxAd;
++import com.applovin.mediation.MaxError;
++import com.applovin.mediation.nativeAds.MaxNativeAdListener;
++import com.applovin.mediation.nativeAds.MaxNativeAdLoader;
++import com.applovin.mediation.nativeAds.MaxNativeAdView;
++import com.applovin.mediation.nativeAds.MaxNativeAdViewBinder;
++import com.applovin.sdk.AppLovinAd;
++import com.applovin.sdk.AppLovinAdLoadListener;
++import com.applovin.sdk.AppLovinAdSize;
++import com.facebook.ads.AdError;
++import com.facebook.ads.AdOptionsView;
++import com.facebook.ads.NativeAdLayout;
++import com.facebook.ads.NativeAdListener;
++import com.google.android.gms.ads.AdListener;
++import com.google.android.gms.ads.AdLoader;
++import com.google.android.gms.ads.AdRequest;
++import com.google.android.gms.ads.LoadAdError;
++import com.google.android.gms.ads.nativead.MediaView;
++import com.google.android.gms.ads.nativead.NativeAdView;
++import com.marketdigitalcode.adslibrary.R;
++import com.marketdigitalcode.adslibrary.helper.AppLovinCustomEventBanner;
++import com.marketdigitalcode.adslibrary.view.AdManagerTemplateView;
++import com.marketdigitalcode.adslibrary.view.TemplateView;
++import com.startapp.sdk.ads.nativead.NativeAdDetails;
++import com.startapp.sdk.ads.nativead.NativeAdPreferences;
++import com.startapp.sdk.ads.nativead.StartAppNativeAd;
++import com.startapp.sdk.adsbase.Ad;
++import com.startapp.sdk.adsbase.adlisteners.AdEventListener;
++import com.wortise.ads.natives.GoogleNativeAd;
++
++import java.util.ArrayList;
++import java.util.List;
++
++public class NativeAdViewHolder extends RecyclerView.ViewHolder {
++
++    private static final String TAG = "AdNetwork";
++    LinearLayout nativeAdViewContainer;
++
++    //AdMob
++    MediaView mediaView;
++    TemplateView admobNativeAd;
++    LinearLayout admobNativeBackground;
++
++    //Ad Manager
++    MediaView adManagerMediaView;
++    AdManagerTemplateView adManagerNativeAd;
++    LinearLayout adManagerNativeBackground;
++
++    //FAN
++    com.facebook.ads.NativeAd fanNativeAd;
++    NativeAdLayout fanNativeAdLayout;
++
++    //StartApp
++    View startappNativeAd;
++    ImageView startappNativeImage;
++    ImageView startappNativeIcon;
++    TextView startappNativeTitle;
++    TextView startappNativeDescription;
++    Button startappNativeButton;
++    LinearLayout startappNativeBackground;
++
++    //AppLovin
++    FrameLayout applovinNativeAd;
++    MaxNativeAdLoader nativeAdLoader;
++    MaxAd maxNativeAd;
++    LinearLayout appLovinDiscoveryMrecAd;
++    private AppLovinAdView appLovinAdView;
++
++    //Wortise
++    private GoogleNativeAd mGoogleNativeAd;
++    FrameLayout wortiseNativeAd;
++
++    public NativeAdViewHolder(View view) {
++        super(view);
++
++        nativeAdViewContainer = view.findViewById(R.id.native_ad_view_container);
++
++        //AdMob
++        admobNativeAd = view.findViewById(R.id.admob_native_ad_container);
++        mediaView = view.findViewById(R.id.media_view);
++        admobNativeBackground = view.findViewById(R.id.background);
++
++        //Ad Manager
++        adManagerNativeAd = view.findViewById(R.id.google_ad_manager_native_ad_container);
++        adManagerMediaView = view.findViewById(R.id.ad_manager_media_view);
++        adManagerNativeBackground = view.findViewById(R.id.ad_manager_background);
++
++        //FAN
++        fanNativeAdLayout = view.findViewById(R.id.fan_native_ad_container);
++
++        //StartApp
++        startappNativeAd = view.findViewById(R.id.startapp_native_ad_container);
++        startappNativeImage = view.findViewById(R.id.startapp_native_image);
++        startappNativeIcon = view.findViewById(R.id.startapp_native_icon);
++        startappNativeTitle = view.findViewById(R.id.startapp_native_title);
++        startappNativeDescription = view.findViewById(R.id.startapp_native_description);
++        startappNativeButton = view.findViewById(R.id.startapp_native_button);
++        startappNativeButton.setOnClickListener(v1 -> itemView.performClick());
++        startappNativeBackground = view.findViewById(R.id.startapp_native_background);
++
++        //AppLovin
++        applovinNativeAd = view.findViewById(R.id.applovin_native_ad_container);
++        appLovinDiscoveryMrecAd = view.findViewById(R.id.applovin_discovery_mrec_ad_container);
++
++        wortiseNativeAd = view.findViewById(R.id.wortise_native_ad_container);
++
++    }
++    public void loadNativeAd(Context context, String adStatus,  String adNetwork, String backupAdNetwork, String mNativeId, boolean darkTheme, boolean legacyGDPR, String nativeAdStyle, int nativeBackgroundLight, int nativeBackgroundDark) {
++        if (adStatus.equals(AD_STATUS_ON)) {
++            switch (adNetwork) {
++                case ADMOB:
++                case FAN_BIDDING_ADMOB:
++                    if (admobNativeAd.getVisibility() != View.VISIBLE) {
++                        AdLoader adLoader = new AdLoader.Builder(context, mNativeId)
++                                .forNativeAd(NativeAd -> {
++                                    if (darkTheme) {
++                                        ColorDrawable colorDrawable = new ColorDrawable(ContextCompat.getColor(context, nativeBackgroundDark));
++                                        NativeTemplateStyle styles = new NativeTemplateStyle.Builder().withMainBackgroundColor(colorDrawable).build();
++                                        admobNativeAd.setStyles(styles);
++                                        admobNativeBackground.setBackgroundResource(nativeBackgroundDark);
++                                    } else {
++                                        ColorDrawable colorDrawable = new ColorDrawable(ContextCompat.getColor(context, nativeBackgroundLight));
++                                        NativeTemplateStyle styles = new NativeTemplateStyle.Builder().withMainBackgroundColor(colorDrawable).build();
++                                        admobNativeAd.setStyles(styles);
++                                        admobNativeBackground.setBackgroundResource(nativeBackgroundLight);
++                                    }
++                                    mediaView.setImageScaleType(ImageView.ScaleType.CENTER_CROP);
++                                    admobNativeAd.setNativeAd(NativeAd);
++                                    admobNativeAd.setVisibility(View.VISIBLE);
++                                    nativeAdViewContainer.setVisibility(View.VISIBLE);
++                                })
++                                .withAdListener(new AdListener() {
++                                    @Override
++                                    public void onAdFailedToLoad(@NonNull LoadAdError adError) {
++                                        loadBackupNativeAd(context, adStatus, backupAdNetwork, mNativeId, darkTheme, legacyGDPR, nativeAdStyle, nativeBackgroundLight, nativeBackgroundDark);
++                                    }
++                                })
++                                .build();
++                        adLoader.loadAd(AdsTools.getAdRequest((Activity) context, legacyGDPR));
++                    } else {
++                        Log.d(TAG, "AdMob native ads has been loaded");
++                    }
++                    break;
++
++                case GOOGLE_AD_MANAGER:
++                case FAN_BIDDING_AD_MANAGER:
++                    if (adManagerNativeAd.getVisibility() != View.VISIBLE) {
++                        AdLoader adLoader = new AdLoader.Builder(context, mNativeId)
++                                .forNativeAd(NativeAd -> {
++                                    if (darkTheme) {
++                                        ColorDrawable colorDrawable = new ColorDrawable(ContextCompat.getColor(context, nativeBackgroundDark));
++                                        NativeTemplateStyle styles = new NativeTemplateStyle.Builder().withMainBackgroundColor(colorDrawable).build();
++                                        adManagerNativeAd.setStyles(styles);
++                                        adManagerNativeBackground.setBackgroundResource(nativeBackgroundDark);
++                                    } else {
++                                        ColorDrawable colorDrawable = new ColorDrawable(ContextCompat.getColor(context, nativeBackgroundLight));
++                                        NativeTemplateStyle styles = new NativeTemplateStyle.Builder().withMainBackgroundColor(colorDrawable).build();
++                                        adManagerNativeAd.setStyles(styles);
++                                        adManagerNativeBackground.setBackgroundResource(nativeBackgroundLight);
++                                    }
++                                    adManagerMediaView.setImageScaleType(ImageView.ScaleType.CENTER_CROP);
++                                    adManagerNativeAd.setNativeAd(NativeAd);
++                                    adManagerNativeAd.setVisibility(View.VISIBLE);
++                                    nativeAdViewContainer.setVisibility(View.VISIBLE);
++                                })
++                                .withAdListener(new AdListener() {
++                                    @Override
++                                    public void onAdFailedToLoad(@NonNull LoadAdError adError) {
++                                        loadBackupNativeAd(context, adStatus, backupAdNetwork, mNativeId, darkTheme, legacyGDPR, nativeAdStyle, nativeBackgroundLight, nativeBackgroundDark);
++                                    }
++                                })
++                                .build();
++                        adLoader.loadAd(AdsTools.getGoogleAdManagerRequest());
++                    } else {
++                        Log.d(TAG, "Ad Manager Native Ad has been loaded");
++                    }
++                    break;
++
++                case FAN:
++                case FACEBOOK:
++                    if (fanNativeAdLayout.getVisibility() != View.VISIBLE) {
++                        fanNativeAd = new com.facebook.ads.NativeAd(context, mNativeId);
++                        NativeAdListener nativeAdListener = new NativeAdListener() {
++                            @Override
++                            public void onMediaDownloaded(com.facebook.ads.Ad ad) {
++
++                            }
++
++                            @Override
++                            public void onError(com.facebook.ads.Ad ad, AdError adError) {
++                                loadBackupNativeAd(context, adStatus, backupAdNetwork, mNativeId, darkTheme, legacyGDPR, nativeAdStyle, nativeBackgroundLight, nativeBackgroundDark);
++                            }
++
++                            @Override
++                            public void onAdLoaded(com.facebook.ads.Ad ad) {
++                                // Race condition, load() called again before last ad was displayed
++                                fanNativeAdLayout.setVisibility(View.VISIBLE);
++                                nativeAdViewContainer.setVisibility(View.VISIBLE);
++                                if (fanNativeAd != ad) {
++                                    return;
++                                }
++                                // Inflate Native Ad into Container
++                                //inflateAd(nativeAd);
++                                fanNativeAd.unregisterView();
++                                // Add the Ad view into the ad container.
++                                LayoutInflater inflater = LayoutInflater.from(context);
++                                // Inflate the Ad view.  The layout referenced should be the one you created in the last step.
++                                LinearLayout nativeAdView;
++
++                                switch (nativeAdStyle) {
++                                    case AdsConstant.STYLE_NEWS:
++                                    case AdsConstant.STYLE_MEDIUM:
++                                        nativeAdView = (LinearLayout) inflater.inflate(R.layout.gnt_fan_news_template_view, fanNativeAdLayout, false);
++                                        break;
++                                    case AdsConstant.STYLE_VIDEO_SMALL:
++                                        nativeAdView = (LinearLayout) inflater.inflate(R.layout.gnt_fan_video_small_template_view, fanNativeAdLayout, false);
++                                        break;
++                                    case AdsConstant.STYLE_VIDEO_LARGE:
++                                        nativeAdView = (LinearLayout) inflater.inflate(R.layout.gnt_fan_video_large_template_view, fanNativeAdLayout, false);
++                                        break;
++                                    case AdsConstant.STYLE_RADIO:
++                                    case AdsConstant.STYLE_SMALL:
++                                        nativeAdView = (LinearLayout) inflater.inflate(R.layout.gnt_fan_radio_template_view, fanNativeAdLayout, false);
++                                        break;
++                                    default:
++                                        nativeAdView = (LinearLayout) inflater.inflate(R.layout.gnt_fan_medium_template_view, fanNativeAdLayout, false);
++                                        break;
++                                }
++                                fanNativeAdLayout.addView(nativeAdView);
++
++                                // Add the AdOptionsView
++                                LinearLayout adChoicesContainer = nativeAdView.findViewById(R.id.ad_choices_container);
++                                AdOptionsView adOptionsView = new AdOptionsView(context, fanNativeAd, fanNativeAdLayout);
++                                adChoicesContainer.removeAllViews();
++                                adChoicesContainer.addView(adOptionsView, 0);
++
++                                // Create native UI using the ad metadata.
++                                TextView nativeAdTitle = nativeAdView.findViewById(R.id.native_ad_title);
++                                com.facebook.ads.MediaView nativeAdMedia = nativeAdView.findViewById(R.id.native_ad_media);
++                                com.facebook.ads.MediaView nativeAdIcon = nativeAdView.findViewById(R.id.native_ad_icon);
++                                TextView nativeAdSocialContext = nativeAdView.findViewById(R.id.native_ad_social_context);
++                                TextView nativeAdBody = nativeAdView.findViewById(R.id.native_ad_body);
++                                TextView sponsoredLabel = nativeAdView.findViewById(R.id.native_ad_sponsored_label);
++                                Button nativeAdCallToAction = nativeAdView.findViewById(R.id.native_ad_call_to_action);
++                                LinearLayout fanNativeBackground = nativeAdView.findViewById(R.id.ad_unit);
++
++                                if (darkTheme) {
++                                    nativeAdTitle.setTextColor(ContextCompat.getColor(context, R.color.applovin_dark_primary_text_color));
++                                    nativeAdSocialContext.setTextColor(ContextCompat.getColor(context, R.color.applovin_dark_primary_text_color));
++                                    sponsoredLabel.setTextColor(ContextCompat.getColor(context, R.color.applovin_dark_secondary_text_color));
++                                    nativeAdBody.setTextColor(ContextCompat.getColor(context, R.color.applovin_dark_secondary_text_color));
++                                    fanNativeBackground.setBackgroundResource(nativeBackgroundDark);
++                                } else {
++                                    fanNativeBackground.setBackgroundResource(nativeBackgroundLight);
++                                }
++
++                                // Set the Text.
++                                nativeAdTitle.setText(fanNativeAd.getAdvertiserName());
++                                nativeAdBody.setText(fanNativeAd.getAdBodyText());
++                                nativeAdSocialContext.setText(fanNativeAd.getAdSocialContext());
++                                nativeAdCallToAction.setVisibility(fanNativeAd.hasCallToAction() ? View.VISIBLE : View.INVISIBLE);
++                                nativeAdCallToAction.setText(fanNativeAd.getAdCallToAction());
++                                sponsoredLabel.setText(fanNativeAd.getSponsoredTranslation());
++
++                                // Create a list of clickable views
++                                List<View> clickableViews = new ArrayList<>();
++                                clickableViews.add(nativeAdTitle);
++                                clickableViews.add(sponsoredLabel);
++                                clickableViews.add(nativeAdIcon);
++                                clickableViews.add(nativeAdMedia);
++                                clickableViews.add(nativeAdBody);
++                                clickableViews.add(nativeAdSocialContext);
++                                clickableViews.add(nativeAdCallToAction);
++
++                                // Register the Title and CTA button to listen for clicks.
++                                fanNativeAd.registerViewForInteraction(nativeAdView, nativeAdIcon, nativeAdMedia, clickableViews);
++
++                            }
++
++                            @Override
++                            public void onAdClicked(com.facebook.ads.Ad ad) {
++
++                            }
++
++                            @Override
++                            public void onLoggingImpression(com.facebook.ads.Ad ad) {
++
++                            }
++                        };
++
++                        com.facebook.ads.NativeAd.NativeLoadAdConfig loadAdConfig = fanNativeAd.buildLoadAdConfig().withAdListener(nativeAdListener).build();
++                        fanNativeAd.loadAd(loadAdConfig);
++                    } else {
++                        Log.d(TAG, "FAN Native Ad has been loaded");
++                    }
++                    break;
++
++                case STARTAPP:
++                    if (startappNativeAd.getVisibility() != View.VISIBLE) {
++                        StartAppNativeAd startAppNativeAd = new StartAppNativeAd(context);
++                        NativeAdPreferences nativePrefs = new NativeAdPreferences()
++                                .setAdsNumber(3)
++                                .setAutoBitmapDownload(true)
++                                .setPrimaryImageSize(AdsConstant.STARTAPP_IMAGE_MEDIUM);
++                        AdEventListener adListener = new AdEventListener() {
++                            @Override
++                            public void onReceiveAd(@NonNull Ad arg0) {
++                                Log.d("STARTAPP_ADS", "ad loaded");
++                                startappNativeAd.setVisibility(View.VISIBLE);
++                                nativeAdViewContainer.setVisibility(View.VISIBLE);
++                                //noinspection rawtypes
++                                ArrayList ads = startAppNativeAd.getNativeAds(); // get NativeAds list
++
++                                // Print all ads details to log
++                                for (Object ad : ads) {
++                                    Log.d("STARTAPP_ADS", ad.toString());
++                                }
++
++                                NativeAdDetails ad = (NativeAdDetails) ads.get(0);
++                                if (ad != null) {
++                                    startappNativeImage.setImageBitmap(ad.getImageBitmap());
++                                    startappNativeIcon.setImageBitmap(ad.getSecondaryImageBitmap());
++                                    startappNativeTitle.setText(ad.getTitle());
++                                    startappNativeDescription.setText(ad.getDescription());
++                                    startappNativeButton.setText(ad.isApp() ? "Install" : "Open");
++                                    ad.registerViewForInteraction(itemView);
++                                }
++
++                                if (darkTheme) {
++                                    startappNativeBackground.setBackgroundResource(nativeBackgroundDark);
++                                } else {
++                                    startappNativeBackground.setBackgroundResource(nativeBackgroundLight);
++                                }
++
++                            }
++
++                            @Override
++                            public void onFailedToReceiveAd(Ad arg0) {
++                                loadBackupNativeAd(context, adStatus, backupAdNetwork, mNativeId, darkTheme, legacyGDPR, nativeAdStyle, nativeBackgroundLight, nativeBackgroundDark);
++                                Log.d(TAG, "ad failed");
++                            }
++                        };
++                        //noinspection deprecation
++                        startAppNativeAd.loadAd(nativePrefs, adListener);
++                    } else {
++                        Log.d(TAG, "StartApp native ads has been loaded");
++                    }
++                    break;
++
++                case APPLOVIN:
++                case APPLOVIN_MAX:
++                case FAN_BIDDING_APPLOVIN_MAX:
++                    if (applovinNativeAd.getVisibility() != View.VISIBLE) {
++                        nativeAdLoader = new MaxNativeAdLoader(mNativeId, context);
++                        nativeAdLoader.setNativeAdListener(new MaxNativeAdListener() {
++                            @Override
++                            public void onNativeAdLoaded(final MaxNativeAdView nativeAdView, @NonNull final MaxAd ad) {
++                                // Clean up any pre-existing native ad to prevent memory leaks.
++                                if (maxNativeAd != null) {
++                                    nativeAdLoader.destroy(maxNativeAd);
++                                }
++
++                                // Save ad for cleanup.
++                                maxNativeAd = ad;
++
++                                // Add ad view to view.
++                                applovinNativeAd.removeAllViews();
++                                applovinNativeAd.addView(nativeAdView);
++                                applovinNativeAd.setVisibility(View.VISIBLE);
++                                nativeAdViewContainer.setVisibility(View.VISIBLE);
++
++                                LinearLayout applovinNativeBackground = nativeAdView.findViewById(R.id.applovin_native_background);
++                                if (darkTheme) {
++                                    applovinNativeBackground.setBackgroundResource(nativeBackgroundDark);
++                                } else {
++                                    applovinNativeBackground.setBackgroundResource(nativeBackgroundLight);
++                                }
++
++                                Log.d(TAG, "Max Native Ad loaded successfully");
++                            }
++
++                            @Override
++                            public void onNativeAdLoadFailed(@NonNull final String adUnitId, @NonNull final MaxError error) {
++                                // We recommend retrying with exponentially higher delays up to a maximum delay
++                                loadBackupNativeAd(context, adStatus, backupAdNetwork, mNativeId, darkTheme, legacyGDPR, nativeAdStyle, nativeBackgroundLight, nativeBackgroundDark);
++                                Log.d(TAG, "failed to load Max Native Ad with message : " + error.getMessage() + " and error code : " + error.getCode());
++                            }
++
++                            @Override
++                            public void onNativeAdClicked(@NonNull final MaxAd ad) {
++                                // Optional click callback
++                            }
++                        });
++                        if (darkTheme) {
++                            nativeAdLoader.loadAd(createNativeAdViewDark(context, nativeAdStyle));
++                        } else {
++                            nativeAdLoader.loadAd(createNativeAdView(context, nativeAdStyle));
++                        }
++                    } else {
++                        Log.d(TAG, "AppLovin Native ads has been loaded");
++                    }
++                    break;
++
++                case APPLOVIN_DISCOVERY:
++                    if (appLovinDiscoveryMrecAd.getVisibility() != View.VISIBLE) {
++                        AdRequest.Builder builder = new AdRequest.Builder();
++                        Bundle bannerExtras = new Bundle();
++                        bannerExtras.putString("zone_id", mNativeId);
++                        builder.addCustomEventExtrasBundle(AppLovinCustomEventBanner.class, bannerExtras);
++
++                        AppLovinAdSize adSize = AppLovinAdSize.MREC;
++                        this.appLovinAdView = new AppLovinAdView(adSize, context);
++                        this.appLovinAdView.setAdLoadListener(new AppLovinAdLoadListener() {
++                            @Override
++                            public void adReceived(AppLovinAd ad) {
++                                appLovinDiscoveryMrecAd.setVisibility(View.VISIBLE);
++                                nativeAdViewContainer.setVisibility(View.VISIBLE);
++                            }
++
++                            @Override
++                            public void failedToReceiveAd(int errorCode) {
++                                appLovinDiscoveryMrecAd.setVisibility(View.GONE);
++                                nativeAdViewContainer.setVisibility(View.GONE);
++                                loadBackupNativeAd(context, adStatus, backupAdNetwork, mNativeId, darkTheme, legacyGDPR, nativeAdStyle, nativeBackgroundLight, nativeBackgroundDark);
++                            }
++                        });
++                        appLovinDiscoveryMrecAd.addView(this.appLovinAdView);
++                        int padding = context.getResources().getDimensionPixelOffset(R.dimen.gnt_default_margin);
++                        appLovinDiscoveryMrecAd.setPadding(0, padding, 0, padding);
++                        if (darkTheme) {
++                            appLovinDiscoveryMrecAd.setBackgroundResource(nativeBackgroundDark);
++                        } else {
++                            appLovinDiscoveryMrecAd.setBackgroundResource(nativeBackgroundLight);
++                        }
++                        this.appLovinAdView.loadNextAd();
++                    } else {
++                        Log.d(TAG, "AppLovin Discovery Mrec Ad has been loaded");
++                    }
++                    break;
++
++                case WORTISE:
++                    if (wortiseNativeAd.getVisibility() != View.VISIBLE) {
++                        mGoogleNativeAd = new GoogleNativeAd(context, mNativeId, new GoogleNativeAd.Listener() {
++                            @Override
++                            public void onNativeClicked(@NonNull GoogleNativeAd googleNativeAd) {
++
++                            }
++
++                            @Override
++                            public void onNativeFailed(@NonNull GoogleNativeAd googleNativeAd, @NonNull com.wortise.ads.AdError adError) {
++                                loadBackupNativeAd(context, adStatus, backupAdNetwork, mNativeId, darkTheme, legacyGDPR, nativeAdStyle, nativeBackgroundLight, nativeBackgroundDark);
++                                Log.d(TAG, "Wortise Native Ad failed loaded");
++                            }
++
++                            @Override
++                            public void onNativeImpression(@NonNull GoogleNativeAd googleNativeAd) {
++
++                            }
++
++                            @SuppressLint("InflateParams")
++                            @Override
++                            public void onNativeLoaded(@NonNull GoogleNativeAd googleNativeAd, @NonNull com.google.android.gms.ads.nativead.NativeAd nativeAd) {
++                                LayoutInflater inflater = LayoutInflater.from(context);
++                                NativeAdView adView;
++                                switch (nativeAdStyle) {
++                                    case AdsConstant.STYLE_NEWS:
++                                    case AdsConstant.STYLE_MEDIUM:
++                                        adView = (NativeAdView) inflater.inflate(R.layout.gnt_wortise_news_template_view, null);
++                                        break;
++                                    case AdsConstant.STYLE_VIDEO_SMALL:
++                                        adView = (NativeAdView) inflater.inflate(R.layout.gnt_wortise_video_small_template_view, null);
++                                        break;
++                                    case AdsConstant.STYLE_VIDEO_LARGE:
++                                        adView = (NativeAdView) inflater.inflate(R.layout.gnt_wortise_video_large_template_view, null);
++                                        break;
++                                    case AdsConstant.STYLE_RADIO:
++                                    case AdsConstant.STYLE_SMALL:
++                                        adView = (NativeAdView) inflater.inflate(R.layout.gnt_wortise_radio_template_view, null);
++                                        break;
++                                    default:
++                                        adView = (NativeAdView) inflater.inflate(R.layout.gnt_wortise_medium_template_view, null);
++                                        break;
++                                }
++                                populateNativeAdView(context, nativeAd, adView, darkTheme, nativeBackgroundDark, nativeBackgroundLight);
++                                wortiseNativeAd.removeAllViews();
++                                wortiseNativeAd.addView(adView);
++                                wortiseNativeAd.setVisibility(View.VISIBLE);
++                                nativeAdViewContainer.setVisibility(View.VISIBLE);
++                                Log.d(TAG, "Wortise Native Ad loaded");
++                            }
++                        });
++                        mGoogleNativeAd.load();
++                    } else {
++                        Log.d(TAG, "Wortise Native Ad has been loaded");
++                    }
++                    break;
++
++            }
++        }
++    }
++    public void loadBackupNativeAd(Context context, String adStatus, String backupAdNetwork, String mNativeId, boolean darkTheme, boolean legacyGDPR, String nativeAdStyle, int nativeBackgroundLight, int nativeBackgroundDark) {
++        if (adStatus.equals(AD_STATUS_ON)) {
++            switch (backupAdNetwork) {
++                case ADMOB:
++                case FAN_BIDDING_ADMOB:
++                    if (admobNativeAd.getVisibility() != View.VISIBLE) {
++                        AdLoader adLoader = new AdLoader.Builder(context, mNativeId)
++                                .forNativeAd(NativeAd -> {
++                                    if (darkTheme) {
++                                        ColorDrawable colorDrawable = new ColorDrawable(ContextCompat.getColor(context, nativeBackgroundDark));
++                                        NativeTemplateStyle styles = new NativeTemplateStyle.Builder().withMainBackgroundColor(colorDrawable).build();
++                                        admobNativeAd.setStyles(styles);
++                                        admobNativeBackground.setBackgroundResource(nativeBackgroundDark);
++                                    } else {
++                                        ColorDrawable colorDrawable = new ColorDrawable(ContextCompat.getColor(context, nativeBackgroundLight));
++                                        NativeTemplateStyle styles = new NativeTemplateStyle.Builder().withMainBackgroundColor(colorDrawable).build();
++                                        admobNativeAd.setStyles(styles);
++                                        admobNativeBackground.setBackgroundResource(nativeBackgroundLight);
++                                    }
++                                    mediaView.setImageScaleType(ImageView.ScaleType.CENTER_CROP);
++                                    admobNativeAd.setNativeAd(NativeAd);
++                                    admobNativeAd.setVisibility(View.VISIBLE);
++                                    nativeAdViewContainer.setVisibility(View.VISIBLE);
++                                })
++                                .withAdListener(new AdListener() {
++                                    @Override
++                                    public void onAdFailedToLoad(@NonNull LoadAdError adError) {
++                                        admobNativeAd.setVisibility(View.GONE);
++                                        nativeAdViewContainer.setVisibility(View.GONE);
++                                    }
++                                })
++                                .build();
++                        adLoader.loadAd(AdsTools.getAdRequest((Activity) context, legacyGDPR));
++                    } else {
++                        Log.d(TAG, "AdMob native ads has been loaded");
++                    }
++                    break;
++
++                case GOOGLE_AD_MANAGER:
++                case FAN_BIDDING_AD_MANAGER:
++                    if (adManagerNativeAd.getVisibility() != View.VISIBLE) {
++                        AdLoader adLoader = new AdLoader.Builder(context, mNativeId)
++                                .forNativeAd(NativeAd -> {
++                                    if (darkTheme) {
++                                        ColorDrawable colorDrawable = new ColorDrawable(ContextCompat.getColor(context, nativeBackgroundDark));
++                                        NativeTemplateStyle styles = new NativeTemplateStyle.Builder().withMainBackgroundColor(colorDrawable).build();
++                                        adManagerNativeAd.setStyles(styles);
++                                        adManagerNativeBackground.setBackgroundResource(nativeBackgroundDark);
++                                    } else {
++                                        ColorDrawable colorDrawable = new ColorDrawable(ContextCompat.getColor(context, nativeBackgroundLight));
++                                        NativeTemplateStyle styles = new NativeTemplateStyle.Builder().withMainBackgroundColor(colorDrawable).build();
++                                        adManagerNativeAd.setStyles(styles);
++                                        adManagerNativeBackground.setBackgroundResource(nativeBackgroundLight);
++                                    }
++                                    adManagerMediaView.setImageScaleType(ImageView.ScaleType.CENTER_CROP);
++                                    adManagerNativeAd.setNativeAd(NativeAd);
++                                    adManagerNativeAd.setVisibility(View.VISIBLE);
++                                    nativeAdViewContainer.setVisibility(View.VISIBLE);
++                                })
++                                .withAdListener(new AdListener() {
++                                    @Override
++                                    public void onAdFailedToLoad(@NonNull LoadAdError adError) {
++                                        adManagerNativeAd.setVisibility(View.GONE);
++                                        nativeAdViewContainer.setVisibility(View.GONE);
++                                    }
++                                })
++                                .build();
++                        adLoader.loadAd(AdsTools.getGoogleAdManagerRequest());
++                    } else {
++                        Log.d(TAG, "Ad Manager Native Ad has been loaded");
++                    }
++                    break;
++
++                case FAN:
++                case FACEBOOK:
++                    if (fanNativeAdLayout.getVisibility() != View.VISIBLE) {
++                        fanNativeAd = new com.facebook.ads.NativeAd(context, mNativeId);
++                        NativeAdListener nativeAdListener = new NativeAdListener() {
++                            @Override
++                            public void onMediaDownloaded(com.facebook.ads.Ad ad) {
++
++                            }
++
++                            @Override
++                            public void onError(com.facebook.ads.Ad ad, AdError adError) {
++
++                            }
++
++                            @Override
++                            public void onAdLoaded(com.facebook.ads.Ad ad) {
++                                // Race condition, load() called again before last ad was displayed
++                                fanNativeAdLayout.setVisibility(View.VISIBLE);
++                                nativeAdViewContainer.setVisibility(View.VISIBLE);
++                                if (fanNativeAd != ad) {
++                                    return;
++                                }
++                                // Inflate Native Ad into Container
++                                //inflateAd(nativeAd);
++                                fanNativeAd.unregisterView();
++                                // Add the Ad view into the ad container.
++                                LayoutInflater inflater = LayoutInflater.from(context);
++                                // Inflate the Ad view.  The layout referenced should be the one you created in the last step.
++                                LinearLayout nativeAdView;
++
++                                switch (nativeAdStyle) {
++                                    case AdsConstant.STYLE_NEWS:
++                                    case AdsConstant.STYLE_MEDIUM:
++                                        nativeAdView = (LinearLayout) inflater.inflate(R.layout.gnt_fan_news_template_view, fanNativeAdLayout, false);
++                                        break;
++                                    case AdsConstant.STYLE_VIDEO_SMALL:
++                                        nativeAdView = (LinearLayout) inflater.inflate(R.layout.gnt_fan_video_small_template_view, fanNativeAdLayout, false);
++                                        break;
++                                    case AdsConstant.STYLE_VIDEO_LARGE:
++                                        nativeAdView = (LinearLayout) inflater.inflate(R.layout.gnt_fan_video_large_template_view, fanNativeAdLayout, false);
++                                        break;
++                                    case AdsConstant.STYLE_RADIO:
++                                    case AdsConstant.STYLE_SMALL:
++                                        nativeAdView = (LinearLayout) inflater.inflate(R.layout.gnt_fan_radio_template_view, fanNativeAdLayout, false);
++                                        break;
++                                    default:
++                                        nativeAdView = (LinearLayout) inflater.inflate(R.layout.gnt_fan_medium_template_view, fanNativeAdLayout, false);
++                                        break;
++                                }
++                                fanNativeAdLayout.addView(nativeAdView);
++
++                                // Add the AdOptionsView
++                                LinearLayout adChoicesContainer = nativeAdView.findViewById(R.id.ad_choices_container);
++                                AdOptionsView adOptionsView = new AdOptionsView(context, fanNativeAd, fanNativeAdLayout);
++                                adChoicesContainer.removeAllViews();
++                                adChoicesContainer.addView(adOptionsView, 0);
++
++                                // Create native UI using the ad metadata.
++                                TextView nativeAdTitle = nativeAdView.findViewById(R.id.native_ad_title);
++                                com.facebook.ads.MediaView nativeAdMedia = nativeAdView.findViewById(R.id.native_ad_media);
++                                com.facebook.ads.MediaView nativeAdIcon = nativeAdView.findViewById(R.id.native_ad_icon);
++                                TextView nativeAdSocialContext = nativeAdView.findViewById(R.id.native_ad_social_context);
++                                TextView nativeAdBody = nativeAdView.findViewById(R.id.native_ad_body);
++                                TextView sponsoredLabel = nativeAdView.findViewById(R.id.native_ad_sponsored_label);
++                                Button nativeAdCallToAction = nativeAdView.findViewById(R.id.native_ad_call_to_action);
++                                LinearLayout fanNativeBackground = nativeAdView.findViewById(R.id.ad_unit);
++
++                                if (darkTheme) {
++                                    nativeAdTitle.setTextColor(ContextCompat.getColor(context, R.color.applovin_dark_primary_text_color));
++                                    nativeAdSocialContext.setTextColor(ContextCompat.getColor(context, R.color.applovin_dark_primary_text_color));
++                                    sponsoredLabel.setTextColor(ContextCompat.getColor(context, R.color.applovin_dark_secondary_text_color));
++                                    nativeAdBody.setTextColor(ContextCompat.getColor(context, R.color.applovin_dark_secondary_text_color));
++                                    fanNativeBackground.setBackgroundResource(nativeBackgroundDark);
++                                } else {
++                                    fanNativeBackground.setBackgroundResource(nativeBackgroundLight);
++                                }
++
++                                // Set the Text.
++                                nativeAdTitle.setText(fanNativeAd.getAdvertiserName());
++                                nativeAdBody.setText(fanNativeAd.getAdBodyText());
++                                nativeAdSocialContext.setText(fanNativeAd.getAdSocialContext());
++                                nativeAdCallToAction.setVisibility(fanNativeAd.hasCallToAction() ? View.VISIBLE : View.INVISIBLE);
++                                nativeAdCallToAction.setText(fanNativeAd.getAdCallToAction());
++                                sponsoredLabel.setText(fanNativeAd.getSponsoredTranslation());
++
++                                // Create a list of clickable views
++                                List<View> clickableViews = new ArrayList<>();
++                                clickableViews.add(nativeAdTitle);
++                                clickableViews.add(sponsoredLabel);
++                                clickableViews.add(nativeAdIcon);
++                                clickableViews.add(nativeAdMedia);
++                                clickableViews.add(nativeAdBody);
++                                clickableViews.add(nativeAdSocialContext);
++                                clickableViews.add(nativeAdCallToAction);
++
++                                // Register the Title and CTA button to listen for clicks.
++                                fanNativeAd.registerViewForInteraction(nativeAdView, nativeAdIcon, nativeAdMedia, clickableViews);
++
++                            }
++
++                            @Override
++                            public void onAdClicked(com.facebook.ads.Ad ad) {
++
++                            }
++
++                            @Override
++                            public void onLoggingImpression(com.facebook.ads.Ad ad) {
++
++                            }
++                        };
++
++                        com.facebook.ads.NativeAd.NativeLoadAdConfig loadAdConfig = fanNativeAd.buildLoadAdConfig().withAdListener(nativeAdListener).build();
++                        fanNativeAd.loadAd(loadAdConfig);
++                    } else {
++                        Log.d(TAG, "FAN Native Ad has been loaded");
++                    }
++                    break;
++
++                case STARTAPP:
++                    if (startappNativeAd.getVisibility() != View.VISIBLE) {
++                        StartAppNativeAd startAppNativeAd = new StartAppNativeAd(context);
++                        NativeAdPreferences nativePrefs = new NativeAdPreferences()
++                                .setAdsNumber(3)
++                                .setAutoBitmapDownload(true)
++                                .setPrimaryImageSize(AdsConstant.STARTAPP_IMAGE_MEDIUM);
++                        AdEventListener adListener = new AdEventListener() {
++                            @Override
++                            public void onReceiveAd(@NonNull Ad arg0) {
++                                Log.d("STARTAPP_ADS", "ad loaded");
++                                startappNativeAd.setVisibility(View.VISIBLE);
++                                nativeAdViewContainer.setVisibility(View.VISIBLE);
++                                //noinspection rawtypes
++                                ArrayList ads = startAppNativeAd.getNativeAds(); // get NativeAds list
++
++                                // Print all ads details to log
++                                for (Object ad : ads) {
++                                    Log.d("STARTAPP_ADS", ad.toString());
++                                }
++
++                                NativeAdDetails ad = (NativeAdDetails) ads.get(0);
++                                if (ad != null) {
++                                    startappNativeImage.setImageBitmap(ad.getImageBitmap());
++                                    startappNativeIcon.setImageBitmap(ad.getSecondaryImageBitmap());
++                                    startappNativeTitle.setText(ad.getTitle());
++                                    startappNativeDescription.setText(ad.getDescription());
++                                    startappNativeButton.setText(ad.isApp() ? "Install" : "Open");
++                                    ad.registerViewForInteraction(itemView);
++                                }
++
++                                if (darkTheme) {
++                                    startappNativeBackground.setBackgroundResource(nativeBackgroundDark);
++                                } else {
++                                    startappNativeBackground.setBackgroundResource(nativeBackgroundLight);
++                                }
++
++                            }
++
++                            @Override
++                            public void onFailedToReceiveAd(Ad arg0) {
++                                startappNativeAd.setVisibility(View.GONE);
++                                nativeAdViewContainer.setVisibility(View.GONE);
++                                Log.d(TAG, "ad failed");
++                            }
++                        };
++                        //noinspection deprecation
++                        startAppNativeAd.loadAd(nativePrefs, adListener);
++                    } else {
++                        Log.d(TAG, "StartApp native ads has been loaded");
++                    }
++                    break;
++
++                case APPLOVIN:
++                case APPLOVIN_MAX:
++                case FAN_BIDDING_APPLOVIN_MAX:
++                    if (applovinNativeAd.getVisibility() != View.VISIBLE) {
++                        nativeAdLoader = new MaxNativeAdLoader(mNativeId, context);
++                        nativeAdLoader.setNativeAdListener(new MaxNativeAdListener() {
++                            @Override
++                            public void onNativeAdLoaded(final MaxNativeAdView nativeAdView, @NonNull final MaxAd ad) {
++                                // Clean up any pre-existing native ad to prevent memory leaks.
++                                if (maxNativeAd != null) {
++                                    nativeAdLoader.destroy(maxNativeAd);
++                                }
++
++                                // Save ad for cleanup.
++                                maxNativeAd = ad;
++
++                                // Add ad view to view.
++                                applovinNativeAd.removeAllViews();
++                                applovinNativeAd.addView(nativeAdView);
++                                applovinNativeAd.setVisibility(View.VISIBLE);
++                                nativeAdViewContainer.setVisibility(View.VISIBLE);
++
++                                LinearLayout applovinNativeBackground = nativeAdView.findViewById(R.id.applovin_native_background);
++                                if (darkTheme) {
++                                    applovinNativeBackground.setBackgroundResource(nativeBackgroundDark);
++                                } else {
++                                    applovinNativeBackground.setBackgroundResource(nativeBackgroundLight);
++                                }
++                            }
++
++                            @Override
++                            public void onNativeAdLoadFailed(@NonNull final String adUnitId, @NonNull final MaxError error) {
++                                // We recommend retrying with exponentially higher delays up to a maximum delay
++                            }
++
++                            @Override
++                            public void onNativeAdClicked(@NonNull final MaxAd ad) {
++                                // Optional click callback
++                            }
++                        });
++                        if (darkTheme) {
++                            nativeAdLoader.loadAd(createNativeAdViewDark(context, nativeAdStyle));
++                        } else {
++                            nativeAdLoader.loadAd(createNativeAdView(context, nativeAdStyle));
++                        }
++                    } else {
++                        Log.d(TAG, "AppLovin Native ads has been loaded");
++                    }
++                    break;
++
++                case APPLOVIN_DISCOVERY:
++                    if (appLovinDiscoveryMrecAd.getVisibility() != View.VISIBLE) {
++                        AdRequest.Builder builder = new AdRequest.Builder();
++                        Bundle bannerExtras = new Bundle();
++                        bannerExtras.putString("zone_id", mNativeId);
++                        builder.addCustomEventExtrasBundle(AppLovinCustomEventBanner.class, bannerExtras);
++
++                        AppLovinAdSize adSize = AppLovinAdSize.MREC;
++                        this.appLovinAdView = new AppLovinAdView(adSize, context);
++                        this.appLovinAdView.setAdLoadListener(new AppLovinAdLoadListener() {
++                            @Override
++                            public void adReceived(AppLovinAd ad) {
++                                appLovinDiscoveryMrecAd.setVisibility(View.VISIBLE);
++                                nativeAdViewContainer.setVisibility(View.VISIBLE);
++                            }
++
++                            @Override
++                            public void failedToReceiveAd(int errorCode) {
++                                appLovinDiscoveryMrecAd.setVisibility(View.GONE);
++                                nativeAdViewContainer.setVisibility(View.GONE);
++                            }
++                        });
++                        appLovinDiscoveryMrecAd.addView(this.appLovinAdView);
++                        int padding = context.getResources().getDimensionPixelOffset(R.dimen.gnt_default_margin);
++                        appLovinDiscoveryMrecAd.setPadding(0, padding, 0, padding);
++                        if (darkTheme) {
++                            appLovinDiscoveryMrecAd.setBackgroundResource(nativeBackgroundDark);
++                        } else {
++                            appLovinDiscoveryMrecAd.setBackgroundResource(nativeBackgroundLight);
++                        }
++                        this.appLovinAdView.loadNextAd();
++                    } else {
++                        Log.d(TAG, "AppLovin Discovery Mrec Ad has been loaded");
++                    }
++                    break;
++
++                case WORTISE:
++                    if (wortiseNativeAd.getVisibility() != View.VISIBLE) {
++                        mGoogleNativeAd = new GoogleNativeAd(context, mNativeId, new GoogleNativeAd.Listener() {
++                            @Override
++                            public void onNativeClicked(@NonNull GoogleNativeAd googleNativeAd) {
++
++                            }
++
++                            @Override
++                            public void onNativeFailed(@NonNull GoogleNativeAd googleNativeAd, @NonNull com.wortise.ads.AdError adError) {
++                                Log.d(TAG, "[Backup] Wortise Native Ad failed loaded");
++                            }
++
++                            @Override
++                            public void onNativeImpression(@NonNull GoogleNativeAd googleNativeAd) {
++
++                            }
++
++                            @SuppressLint("InflateParams")
++                            @Override
++                            public void onNativeLoaded(@NonNull GoogleNativeAd googleNativeAd, @NonNull com.google.android.gms.ads.nativead.NativeAd nativeAd) {
++                                LayoutInflater inflater = LayoutInflater.from(context);
++                                NativeAdView adView;
++                                switch (nativeAdStyle) {
++                                    case AdsConstant.STYLE_NEWS:
++                                    case AdsConstant.STYLE_MEDIUM:
++                                        adView = (NativeAdView) inflater.inflate(R.layout.gnt_wortise_news_template_view, null);
++                                        break;
++                                    case AdsConstant.STYLE_VIDEO_SMALL:
++                                        adView = (NativeAdView) inflater.inflate(R.layout.gnt_wortise_video_small_template_view, null);
++                                        break;
++                                    case AdsConstant.STYLE_VIDEO_LARGE:
++                                        adView = (NativeAdView) inflater.inflate(R.layout.gnt_wortise_video_large_template_view, null);
++                                        break;
++                                    case AdsConstant.STYLE_RADIO:
++                                    case AdsConstant.STYLE_SMALL:
++                                        adView = (NativeAdView) inflater.inflate(R.layout.gnt_wortise_radio_template_view, null);
++                                        break;
++                                    default:
++                                        adView = (NativeAdView) inflater.inflate(R.layout.gnt_wortise_medium_template_view, null);
++                                        break;
++                                }
++                                populateNativeAdView(context, nativeAd, adView, darkTheme, nativeBackgroundDark, nativeBackgroundLight);
++                                wortiseNativeAd.removeAllViews();
++                                wortiseNativeAd.addView(adView);
++                                wortiseNativeAd.setVisibility(View.VISIBLE);
++                                nativeAdViewContainer.setVisibility(View.VISIBLE);
++                                Log.d(TAG, "[Backup] Wortise Native Ad loaded");
++                            }
++                        });
++                        mGoogleNativeAd.load();
++                    } else {
++                        Log.d(TAG, "[Backup] Wortise Native Ad has been loaded");
++                    }
++                    break;
++
++                case NONE:
++                    nativeAdViewContainer.setVisibility(View.GONE);
++                    break;
++
++            }
++        }
++    }
++
++
++    public void setNativeAdPadding(int left, int top, int right, int bottom) {
++        nativeAdViewContainer.setPadding(left, top, right, bottom);
++    }
++
++    public void setNativeAdMargin(int left, int top, int right, int bottom) {
++        setMargins(nativeAdViewContainer, left, top, right, bottom);
++    }
++
++    public void setMargins(View view, int left, int top, int right, int bottom) {
++        if (view.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
++            ViewGroup.MarginLayoutParams p = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
++            p.setMargins(left, top, right, bottom);
++            view.requestLayout();
++        }
++    }
++
++    public void setNativeAdBackgroundResource(int drawableBackground) {
++        nativeAdViewContainer.setBackgroundResource(drawableBackground);
++    }
++
++    public void setNativeAdBackgroundColor(Context context, boolean darkTheme, int nativeBackgroundLight, int nativeBackgroundDark) {
++        if (darkTheme) {
++            nativeAdViewContainer.setBackgroundColor(ContextCompat.getColor(context, nativeBackgroundDark));
++        } else {
++            nativeAdViewContainer.setBackgroundColor(ContextCompat.getColor(context, nativeBackgroundLight));
++        }
++    }
++
++    public MaxNativeAdView createNativeAdView(Context context, String nativeStyles) {
++        MaxNativeAdViewBinder binder;
++        switch (nativeStyles) {
++            case AdsConstant.STYLE_NEWS:
++            case AdsConstant.STYLE_MEDIUM:
++                binder = new MaxNativeAdViewBinder.Builder(R.layout.gnt_applovin_news_template_view)
++                        .setTitleTextViewId(R.id.title_text_view)
++                        .setBodyTextViewId(R.id.body_text_view)
++                        .setAdvertiserTextViewId(R.id.advertiser_textView)
++                        .setIconImageViewId(R.id.icon_image_view)
++                        .setMediaContentViewGroupId(R.id.media_view_container)
++                        .setOptionsContentViewGroupId(R.id.ad_options_view)
++                        .setCallToActionButtonId(R.id.cta_button)
++                        .build();
++                break;
++            case AdsConstant.STYLE_RADIO:
++            case AdsConstant.STYLE_SMALL:
++                binder = new MaxNativeAdViewBinder.Builder(R.layout.gnt_applovin_radio_template_view)
++                        .setTitleTextViewId(R.id.title_text_view)
++                        .setBodyTextViewId(R.id.body_text_view)
++                        .setAdvertiserTextViewId(R.id.advertiser_textView)
++                        .setIconImageViewId(R.id.icon_image_view)
++                        .setMediaContentViewGroupId(R.id.media_view_container)
++                        .setOptionsContentViewGroupId(R.id.ad_options_view)
++                        .setCallToActionButtonId(R.id.cta_button)
++                        .build();
++                break;
++            case AdsConstant.STYLE_VIDEO_LARGE:
++                binder = new MaxNativeAdViewBinder.Builder(R.layout.gnt_applovin_video_large_template_view)
++                        .setTitleTextViewId(R.id.title_text_view)
++                        .setBodyTextViewId(R.id.body_text_view)
++                        .setAdvertiserTextViewId(R.id.advertiser_textView)
++                        .setIconImageViewId(R.id.icon_image_view)
++                        .setMediaContentViewGroupId(R.id.media_view_container)
++                        .setOptionsContentViewGroupId(R.id.ad_options_view)
++                        .setCallToActionButtonId(R.id.cta_button)
++                        .build();
++                break;
++            case AdsConstant.STYLE_VIDEO_SMALL:
++                binder = new MaxNativeAdViewBinder.Builder(R.layout.gnt_applovin_video_small_template_view)
++                        .setTitleTextViewId(R.id.title_text_view)
++                        .setBodyTextViewId(R.id.body_text_view)
++                        .setAdvertiserTextViewId(R.id.advertiser_textView)
++                        .setIconImageViewId(R.id.icon_image_view)
++                        .setMediaContentViewGroupId(R.id.media_view_container)
++                        .setOptionsContentViewGroupId(R.id.ad_options_view)
++                        .setCallToActionButtonId(R.id.cta_button)
++                        .build();
++                break;
++            default:
++                binder = new MaxNativeAdViewBinder.Builder(R.layout.gnt_applovin_medium_template_view)
++                        .setTitleTextViewId(R.id.title_text_view)
++                        .setBodyTextViewId(R.id.body_text_view)
++                        .setAdvertiserTextViewId(R.id.advertiser_textView)
++                        .setIconImageViewId(R.id.icon_image_view)
++                        .setMediaContentViewGroupId(R.id.media_view_container)
++                        .setOptionsContentViewGroupId(R.id.ad_options_view)
++                        .setCallToActionButtonId(R.id.cta_button)
++                        .build();
++                break;
++        }
++        return new MaxNativeAdView(binder, context);
++    }
++
++    public MaxNativeAdView createNativeAdViewDark(Context context, String nativeStyles) {
++        MaxNativeAdViewBinder binder;
++        switch (nativeStyles) {
++            case AdsConstant.STYLE_NEWS:
++            case AdsConstant.STYLE_MEDIUM:
++                binder = new MaxNativeAdViewBinder.Builder(R.layout.gnt_applovin_dark_news_template_view)
++                        .setTitleTextViewId(R.id.title_text_view)
++                        .setBodyTextViewId(R.id.body_text_view)
++                        .setAdvertiserTextViewId(R.id.advertiser_textView)
++                        .setIconImageViewId(R.id.icon_image_view)
++                        .setMediaContentViewGroupId(R.id.media_view_container)
++                        .setOptionsContentViewGroupId(R.id.ad_options_view)
++                        .setCallToActionButtonId(R.id.cta_button)
++                        .build();
++                break;
++            case AdsConstant.STYLE_RADIO:
++            case AdsConstant.STYLE_SMALL:
++                binder = new MaxNativeAdViewBinder.Builder(R.layout.gnt_applovin_dark_radio_template_view)
++                        .setTitleTextViewId(R.id.title_text_view)
++                        .setBodyTextViewId(R.id.body_text_view)
++                        .setAdvertiserTextViewId(R.id.advertiser_textView)
++                        .setIconImageViewId(R.id.icon_image_view)
++                        .setMediaContentViewGroupId(R.id.media_view_container)
++                        .setOptionsContentViewGroupId(R.id.ad_options_view)
++                        .setCallToActionButtonId(R.id.cta_button)
++                        .build();
++                break;
++            case AdsConstant.STYLE_VIDEO_LARGE:
++                binder = new MaxNativeAdViewBinder.Builder(R.layout.gnt_applovin_dark_video_large_template_view)
++                        .setTitleTextViewId(R.id.title_text_view)
++                        .setBodyTextViewId(R.id.body_text_view)
++                        .setAdvertiserTextViewId(R.id.advertiser_textView)
++                        .setIconImageViewId(R.id.icon_image_view)
++                        .setMediaContentViewGroupId(R.id.media_view_container)
++                        .setOptionsContentViewGroupId(R.id.ad_options_view)
++                        .setCallToActionButtonId(R.id.cta_button)
++                        .build();
++                break;
++            case AdsConstant.STYLE_VIDEO_SMALL:
++                binder = new MaxNativeAdViewBinder.Builder(R.layout.gnt_applovin_dark_video_small_template_view)
++                        .setTitleTextViewId(R.id.title_text_view)
++                        .setBodyTextViewId(R.id.body_text_view)
++                        .setAdvertiserTextViewId(R.id.advertiser_textView)
++                        .setIconImageViewId(R.id.icon_image_view)
++                        .setMediaContentViewGroupId(R.id.media_view_container)
++                        .setOptionsContentViewGroupId(R.id.ad_options_view)
++                        .setCallToActionButtonId(R.id.cta_button)
++                        .build();
++                break;
++            default:
++                binder = new MaxNativeAdViewBinder.Builder(R.layout.gnt_applovin_dark_medium_template_view)
++                        .setTitleTextViewId(R.id.title_text_view)
++                        .setBodyTextViewId(R.id.body_text_view)
++                        .setAdvertiserTextViewId(R.id.advertiser_textView)
++                        .setIconImageViewId(R.id.icon_image_view)
++                        .setMediaContentViewGroupId(R.id.media_view_container)
++                        .setOptionsContentViewGroupId(R.id.ad_options_view)
++                        .setCallToActionButtonId(R.id.cta_button)
++                        .build();
++                break;
++        }
++        return new MaxNativeAdView(binder, context);
++    }
++
++    public void populateNativeAdView(Context context, com.google.android.gms.ads.nativead.NativeAd nativeAd, NativeAdView nativeAdView, boolean darkTheme, int nativeBackgroundDark, int nativeBackgroundLight) {
++
++        if (darkTheme) {
++            nativeAdViewContainer.setBackgroundColor(ContextCompat.getColor(context, nativeBackgroundDark));
++            nativeAdView.findViewById(R.id.background).setBackgroundResource(nativeBackgroundDark);
++        } else {
++            nativeAdViewContainer.setBackgroundColor(ContextCompat.getColor(context, nativeBackgroundLight));
++            nativeAdView.findViewById(R.id.background).setBackgroundResource(nativeBackgroundLight);
++        }
++
++        nativeAdView.setMediaView(nativeAdView.findViewById(R.id.media_view));
++        nativeAdView.setHeadlineView(nativeAdView.findViewById(R.id.primary));
++        nativeAdView.setBodyView(nativeAdView.findViewById(R.id.body));
++        nativeAdView.setCallToActionView(nativeAdView.findViewById(R.id.cta));
++        nativeAdView.setIconView(nativeAdView.findViewById(R.id.icon));
++
++        ((TextView) nativeAdView.getHeadlineView()).setText(nativeAd.getHeadline());
++        nativeAdView.getMediaView().setMediaContent(nativeAd.getMediaContent());
++
++        if (nativeAd.getBody() == null) {
++            nativeAdView.getBodyView().setVisibility(View.INVISIBLE);
++        } else {
++            nativeAdView.getBodyView().setVisibility(View.VISIBLE);
++            ((TextView) nativeAdView.getBodyView()).setText(nativeAd.getBody());
++        }
++
++        if (nativeAd.getCallToAction() == null) {
++            nativeAdView.getCallToActionView().setVisibility(View.INVISIBLE);
++        } else {
++            nativeAdView.getCallToActionView().setVisibility(View.VISIBLE);
++            ((Button) nativeAdView.getCallToActionView()).setText(nativeAd.getCallToAction());
++        }
++
++        if (nativeAd.getIcon() == null) {
++            nativeAdView.getIconView().setVisibility(View.GONE);
++        } else {
++            ((ImageView) nativeAdView.getIconView()).setImageDrawable(nativeAd.getIcon().getDrawable());
++            nativeAdView.getIconView().setVisibility(View.VISIBLE);
++        }
++
++        nativeAdView.setNativeAd(nativeAd);
++    }
++
++}
+Index: adslibrary/src/main/res/values/colors.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<resources>\r\n    <color name=\"color_dark\">#101D24</color>\r\n    <color name=\"color_light\">#FFFFFF</color>\r\n    <color name=\"gnt_test_background_color\">#00F4F4F4</color>\r\n    <color name=\"gnt_test_background_color_2\">#00A3A3A3</color>\r\n    <color name=\"gnt_black\">#000000</color>\r\n    <color name=\"gnt_white\">#FFFFFF</color>\r\n    <color name=\"gnt_red\">#FF0000</color>\r\n    <color name=\"gnt_green\">#00FF00</color>\r\n    <color name=\"gnt_blue\">#2196F3</color>\r\n    <color name=\"gnt_ad_green\">#3A6728</color>\r\n    <color name=\"gnt_gray\">#808080</color>\r\n    <color name=\"gnt_outline\">#E0E0E0</color>\r\n    <color name=\"gnt_ad_yellow\">#FBB828</color>\r\n    <color name=\"gnt_ad_grey\">#939393</color>\r\n    <color name=\"btn_ad_button\">#1A2196F3</color>\r\n    <color name=\"applovin_button_color\">#4385F7</color>\r\n    <color name=\"applovin_dark_primary_text_color\">#FFFFFF</color>\r\n    <color name=\"applovin_dark_secondary_text_color\">#B8BCBE</color>\r\n</resources>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/adslibrary/src/main/res/values/colors.xml b/adslibrary/src/main/res/values/colors.xml
+--- a/adslibrary/src/main/res/values/colors.xml	(revision 8861f21ed94f01b208a45c36b53f29ea9d1cf9e2)
++++ b/adslibrary/src/main/res/values/colors.xml	(date 1701694590192)
+@@ -2,6 +2,8 @@
+ <resources>
+     <color name="color_dark">#101D24</color>
+     <color name="color_light">#FFFFFF</color>
++    <color name="colorNativeBackgroundLight">#EEE</color>
++    <color name="colorNativeBackgroundDark">#424242</color>
+     <color name="gnt_test_background_color">#00F4F4F4</color>
+     <color name="gnt_test_background_color_2">#00A3A3A3</color>
+     <color name="gnt_black">#000000</color>
+Index: app/src/main/java/com/marketdigitalcode/uti/AppConstant.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.marketdigitalcode.uti;\r\n\r\npublic class AppConstant {\r\n    public static final String ADS_JSON = \"https://raw.githubusercontent.com/mdc743/files/main/ads.json\";\r\n    public static final String TAG_LOG = \"MDC_LOG\";\r\n    public static String AD_STATUS = \"1\";\r\n    public static String ADS_TYPE = \"admob\";\r\n    public static String BACKUP_ADS_TYPE = \"admob\";\r\n\r\n    public static String APP_ID = \"ca-app-pub-3940256099942544~3347511713\";\r\n    public static String OPEN_ADS_ID = \"ca-app-pub-3940256099942544/9257395921\";\r\n    public static String BANNER_ID = \"ca-app-pub-3940256099942544/6300978111\";\r\n\r\n    public static String INTER_ID = \"ca-app-pub-3940256099942544/1033173712\";\r\n    public static String REWARD_ID = \"ca-app-pub-3940256099942544/5224354917\";\r\n\r\n    public static String NATIVE_ID = \"ca-app-pub-3940256099942544/2247696110\";\r\n\r\n    public static final String APP_NEXT_APP_ID = \"1089265\";\r\n    public static final String APP_NEXT_BANNER_ID = \"103029bd-5625-4ba2-9293-8a29461b8692\";\r\n    public static final String APP_NEXT_NATIVE_ID = \"YOUR_PLACEMENT_ID\";\r\n    public static final String APP_NEXT_INTER_ID = \"103029bd-5625-4ba2-9293-8a29461b8692\";\r\n    public static final String APP_NEXT_REWARD_ID = \"YOUR_PLACEMENT_ID\";\r\n\r\n\r\n\r\n    public static String ADMOB_APP_ID = \"ca-app-pub-3940256099942544~3347511713\";\r\n    public static String ADMOB_APP_OPEN_AD_ID = \"ca-app-pub-3940256099942544/9257395921\";\r\n    public static String ADMOB_BANNER_ID = \"ca-app-pub-3940256099942544/6300978111\";\r\n\r\n    public static String ADMOB_INTERSTITIAL_ID = \"ca-app-pub-3940256099942544/1033173712\";\r\n    public static String ADMOB_REWARDED_ID = \"ca-app-pub-3940256099942544/5224354917\";\r\n\r\n    public static String ADMOB_NATIVE_ID = \"ca-app-pub-3940256099942544/2247696110\";\r\n    public static final String GOOGLE_AD_MANAGER_BANNER_ID = \"/6499/example/banner\";\r\n    public static final String GOOGLE_AD_MANAGER_INTERSTITIAL_ID = \"/6499/example/interstitial\";\r\n    public static final String GOOGLE_AD_MANAGER_REWARDED_ID = \"/6499/example/rewarded\";\r\n    public static final String GOOGLE_AD_MANAGER_NATIVE_ID = \"/6499/example/native\";\r\n    public static final String GOOGLE_AD_MANAGER_APP_OPEN_AD_ID = \"/6499/example/app-open\";\r\n\r\n    public static final String FAN_BANNER_ID = \"YOUR_PLACEMENT_ID\";\r\n    public static final String FAN_INTERSTITIAL_ID = \"YOUR_PLACEMENT_ID\";\r\n    public static final String FAN_REWARDED_ID = \"YOUR_PLACEMENT_ID\";\r\n    public static final String FAN_NATIVE_ID = \"YOUR_PLACEMENT_ID\";\r\n\r\n    public static final String STARTAPP_APP_ID = \"0\";\r\n\r\n    public static final String UNITY_GAME_ID = \"4089993\";\r\n    public static final String UNITY_BANNER_ID = \"banner\";\r\n    public static final String UNITY_INTERSTITIAL_ID = \"video\";\r\n    public static final String UNITY_REWARDED_ID = \"rewardedVideo\";\r\n\r\n    public static final String APPLOVIN_SDK_KEY = \"W4e34LmbBrcShkmTTcv5vQ07nz8LSVescaiucC4A1QQyW2maPvUdFZIdKK2LN_RfvshTL3iFTDMMcN1hPlGoim\";\r\n    public static final String APPLOVIN_MAX_BANNER_ID = \"6c87965a420011da\";\r\n    public static final String APPLOVIN_MAX_INTERSTITIAL_ID = \"57b8c4dc488c3e6c\";\r\n    public static final String APPLOVIN_MAX_REWARDED_ID = \"98f6a586ed642919\";\r\n    public static final String APPLOVIN_MAX_NATIVE_ID = \"bd7299ee26eeb5b7\";\r\n    public static final String APPLOVIN_APP_OPEN_AP_ID = \"019871ea726655e8\";\r\n\r\n    public static final String APPLOVIN_BANNER_ZONE_ID = \"098350fea675ef14\";\r\n    public static final String APPLOVIN_BANNER_MREC_ZONE_ID = \"81287b697d935c32\";\r\n    public static final String APPLOVIN_INTERSTITIAL_ZONE_ID = \"b6eba8b976279ea5\";\r\n    public static final String APPLOVIN_DISC_REWARDED_ZONE_ID = \"b6eba8b976279ea5\";\r\n\r\n    public static final String IRONSOURCE_APP_KEY = \"85460dcd\";\r\n    public static final String IRONSOURCE_BANNER_ID = \"DefaultBanner\";\r\n    public static final String IRONSOURCE_INTERSTITIAL_ID = \"DefaultInterstitial\";\r\n    public static final String IRONSOURCE_REWARDED_ID = \"DefaultRewardedVideo\";\r\n\r\n    public static final String WORTISE_APP_ID = \"test-app-id\";\r\n    public static final String WORTISE_BANNER_ID = \"test-banner\";\r\n    public static final String WORTISE_INTERSTITIAL_ID = \"test-interstitial\";\r\n    public static final String WORTISE_REWARDED_ID = \"test-rewarded\";\r\n    public static final String WORTISE_NATIVE_ID = \"test-native\";\r\n    public static final String WORTISE_APP_OPEN_AD_ID = \"test-app-open\";\r\n\r\n    public static String NATIVE_STYLE = \"default\";\r\n    public static final String STYLE_DEFAULT = \"default\";\r\n\r\n    public static boolean isAppOpen = true;\r\n\r\n\r\n    public static final int INTERSTITIAL_AD_INTERVAL = 1;\r\n    public static final int NATIVE_AD_INDEX = 2;\r\n    public static final int NATIVE_AD_INTERVAL = 8;\r\n\r\n    public static int TIME_SPLASH = 3000;\r\n    public static int COUNT_DOWN_TIMER = 1000;\r\n    public static int MAX_PROGRESS_SPLASH = 3;\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/marketdigitalcode/uti/AppConstant.java b/app/src/main/java/com/marketdigitalcode/uti/AppConstant.java
+--- a/app/src/main/java/com/marketdigitalcode/uti/AppConstant.java	(revision 8861f21ed94f01b208a45c36b53f29ea9d1cf9e2)
++++ b/app/src/main/java/com/marketdigitalcode/uti/AppConstant.java	(date 1701694294416)
+@@ -20,7 +20,7 @@
+     public static final String APP_NEXT_BANNER_ID = "103029bd-5625-4ba2-9293-8a29461b8692";
+     public static final String APP_NEXT_NATIVE_ID = "YOUR_PLACEMENT_ID";
+     public static final String APP_NEXT_INTER_ID = "103029bd-5625-4ba2-9293-8a29461b8692";
+-    public static final String APP_NEXT_REWARD_ID = "YOUR_PLACEMENT_ID";
++    public static final String APP_NEXT_REWARD_ID = "37d5b4a5-500b-44fb-b745-788084be2794";
+ 
+ 
+ 
+@@ -53,12 +53,10 @@
+     public static final String APPLOVIN_SDK_KEY = "W4e34LmbBrcShkmTTcv5vQ07nz8LSVescaiucC4A1QQyW2maPvUdFZIdKK2LN_RfvshTL3iFTDMMcN1hPlGoim";
+     public static final String APPLOVIN_MAX_BANNER_ID = "6c87965a420011da";
+     public static final String APPLOVIN_MAX_INTERSTITIAL_ID = "57b8c4dc488c3e6c";
+-    public static final String APPLOVIN_MAX_REWARDED_ID = "98f6a586ed642919";
+     public static final String APPLOVIN_MAX_NATIVE_ID = "bd7299ee26eeb5b7";
+     public static final String APPLOVIN_APP_OPEN_AP_ID = "019871ea726655e8";
+ 
+     public static final String APPLOVIN_BANNER_ZONE_ID = "098350fea675ef14";
+-    public static final String APPLOVIN_BANNER_MREC_ZONE_ID = "81287b697d935c32";
+     public static final String APPLOVIN_INTERSTITIAL_ZONE_ID = "b6eba8b976279ea5";
+     public static final String APPLOVIN_DISC_REWARDED_ZONE_ID = "b6eba8b976279ea5";
+ 
+@@ -81,8 +79,6 @@
+ 
+ 
+     public static final int INTERSTITIAL_AD_INTERVAL = 1;
+-    public static final int NATIVE_AD_INDEX = 2;
+-    public static final int NATIVE_AD_INTERVAL = 8;
+ 
+     public static int TIME_SPLASH = 3000;
+     public static int COUNT_DOWN_TIMER = 1000;

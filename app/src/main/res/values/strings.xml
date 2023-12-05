@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">MultiAds</string>
+    <string name="image_alt">TODO</string>
+
+    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+    <string name="applovin_sdk_key">W4e34LmbBrcShkmTTcv5vQ07nz8LSVescaiucC4A1QQyW2maPvUdFZIdKK2LN_RfvshTL3iFTDMMcN1hPlGoim</string>
+
+    <string name="btn_show_interstitial_ad">Show Interstitial Ad</string>
+    <string name="btn_show_rewarded_ad">Show Rewarded Video Ad</string>
+</resources>
