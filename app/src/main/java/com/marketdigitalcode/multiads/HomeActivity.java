@@ -29,22 +29,25 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.marketdigitalcode.adslibrary.AdsType;
 import com.marketdigitalcode.adslibrary.AppOpenAd;
-import com.marketdigitalcode.adslibrary.BuildConfig;
 import com.marketdigitalcode.adslibrary.MdcBanner;
 import com.marketdigitalcode.adslibrary.MdcInterstitial;
 import com.marketdigitalcode.adslibrary.MdcNative;
 import com.marketdigitalcode.adslibrary.MdcRewarded;
+import com.marketdigitalcode.adslibrary.NativeAdView;
 import com.marketdigitalcode.adslibrary.face.OnRewardedAdCompleteListener;
 import com.marketdigitalcode.adslibrary.face.OnRewardedAdDismissedListener;
 import com.marketdigitalcode.adslibrary.face.OnRewardedAdErrorListener;
-import com.marketdigitalcode.adslibrary.view.NativeAdView;
+import com.marketdigitalcode.adslibrary.util.AdsConstant;
 import com.marketdigitalcode.uti.AppConstant;
 import com.marketdigitalcode.uti.AppTools;
 import com.marketdigitalcode.uti.SharedPref;
@@ -53,7 +56,6 @@ public class HomeActivity extends AppCompatActivity {
     Toolbar toolbar;
     AdsType.Initialize adNetwork;
     MdcBanner mdcBanner;
-    MdcNative mdcNative;
     MdcInterstitial mdcInterstitial;
     MdcRewarded rewardedAd;
     AppCompatActivity activity;
@@ -61,7 +63,9 @@ public class HomeActivity extends AppCompatActivity {
     Button btnInterstitial;
     Button btnSelectAds, btnNativeAdStyle,btnRewarded;
     SharedPref sharedPref;
-    NativeAdView native_ad;
+    MdcNative mdcNative;
+    NativeAdView nativeAdView;
+    LinearLayout nativeAdViewContainer;
 
     AppOpenAd appOpenAdBuilder;
     @Override
@@ -80,11 +84,11 @@ public class HomeActivity extends AppCompatActivity {
         loadInterstitialAd();
         loadRewardedAd();
         ProcessLifecycleOwner.get().getLifecycle().addObserver(lifecycleObserver);
+        nativeAdViewContainer = findViewById(R.id.native_ad);
+        setNativeAdStyle(nativeAdViewContainer);
+        loadNativeAd();
 
-        native_ad = new NativeAdView(activity);
-        native_ad = findViewById(R.id.native_ad);
 
-        setNativeAdStyle(native_ad);
         btnInterstitial = findViewById(R.id.btn_interstitial);
         btnInterstitial.setOnClickListener(v -> {
             startActivity(new Intent(getApplicationContext(), SecondActivity.class));
@@ -124,8 +128,20 @@ public class HomeActivity extends AppCompatActivity {
     }
 
 
-    private void loadNativeAdView(View view) {
+    private void loadNativeAd() {
         mdcNative = new MdcNative(this)
+                .setAdStatus(AppConstant.AD_STATUS)
+                .setAdsType(AppConstant.ADS_TYPE)
+                .setBackupAdsType(AppConstant.BACKUP_ADS_TYPE)
+                .setNativeId(AppConstant.NATIVE_ID)
+                .setNativeAdStyle(AppConstant.NATIVE_STYLE)
+                .setNativeAdBackgroundColor(R.color.colorNativeBackgroundLight, R.color.colorNativeBackgroundDark)
+                .setPadding(0, 0, 0, 0)
+                .setDarkTheme(sharedPref.getIsDarkTheme())
+                .build();
+    }
+    private void loadNativeAdView(View view) {
+        nativeAdView = new NativeAdView(this)
                 .setAdStatus(AppConstant.AD_STATUS)
                 .setAdsType(AppConstant.ADS_TYPE)
                 .setBackupAdsType(AppConstant.BACKUP_ADS_TYPE)
@@ -135,9 +151,9 @@ public class HomeActivity extends AppCompatActivity {
                 .setDarkTheme(sharedPref.getIsDarkTheme())
                 .setView(view)
                 .build();
-        mdcNative.setPadding(0, 0, 0, 0);
-    }
 
+        nativeAdView.setPadding(0, 0, 0, 0);
+    }
     private void loadInterstitialAd() {
         mdcInterstitial = new MdcInterstitial(activity)
                 .setAdStatus(AppConstant.AD_STATUS)
@@ -229,7 +245,7 @@ public class HomeActivity extends AppCompatActivity {
         super.onResume();
 
         mdcBanner.loadBannerAd();
-        mdcNative.loadNativeAd();
+
 
     }
 
@@ -242,27 +258,22 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
-    private void setNativeAdStyle(NativeAdView nativeAd) {
+    private void setNativeAdStyle(LinearLayout nativeAdView) {
         switch (AppConstant.NATIVE_STYLE) {
             case "news":
-                nativeAd.setNews();
-                loadNativeAdView(nativeAd);
+                nativeAdView.addView(View.inflate(this, com.marketdigitalcode.adslibrary.R.layout.view_native_ad_news, null));
                 break;
             case "radio":
-                nativeAd.setRadio();
-                loadNativeAdView(nativeAd);
+                nativeAdView.addView(View.inflate(this, com.marketdigitalcode.adslibrary.R.layout.view_native_ad_radio, null));
                 break;
             case "video_small":
-                nativeAd.setVideoSmall();
-                loadNativeAdView(nativeAd);
+                nativeAdView.addView(View.inflate(this, com.marketdigitalcode.adslibrary.R.layout.view_native_ad_video_small, null));
                 break;
             case "video_large":
-                nativeAd.setVideoLarge();
-                loadNativeAdView(nativeAd);
+                nativeAdView.addView(View.inflate(this, com.marketdigitalcode.adslibrary.R.layout.view_native_ad_video_large, null));
                 break;
             default:
-                nativeAd.setMedium();
-                loadNativeAdView(nativeAd);
+                nativeAdView.addView(View.inflate(this, com.marketdigitalcode.adslibrary.R.layout.view_native_ad_medium, null));
                 break;
         }
     }
@@ -410,12 +421,32 @@ public class HomeActivity extends AppCompatActivity {
         });
         builder.show();
     }
+    private void showExitDialog() {
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View view = inflater.inflate(R.layout.dialog_exit, null);
 
+        LinearLayout nativeAdViewContainer = view.findViewById(R.id.native_ad_view);
+        setNativeAdStyle(nativeAdViewContainer);
+        loadNativeAdView(view);
+
+        AlertDialog.Builder dialog = new MaterialAlertDialogBuilder(this);
+        dialog.setView(view);
+        dialog.setCancelable(false);
+        dialog.setPositiveButton("Exit", (dialogInterface, i) -> {
+            super.onBackPressed();
+            destroyBannerAd();
+            destroyAppOpenAd();
+            AppConstant.isAppOpen = false;
+        });
+        dialog.setNegativeButton("Cancel", null);
+        dialog.show();
+    }
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        finish();
+        showExitDialog();
     }
+
 
     @Override
     public void onDestroy() {
@@ -423,6 +454,8 @@ public class HomeActivity extends AppCompatActivity {
         destroyBannerAd();
         destroyAppOpenAd();
     }
+
+
     private void destroyAppOpenAd() {
         appOpenAdBuilder.destroyOpenAd();
         ProcessLifecycleOwner.get().getLifecycle().removeObserver(lifecycleObserver);

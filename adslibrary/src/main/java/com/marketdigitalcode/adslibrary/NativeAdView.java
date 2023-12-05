@@ -15,7 +15,9 @@ import static com.marketdigitalcode.adslibrary.util.AdsConstant.GOOGLE_AD_MANAGE
 import static com.marketdigitalcode.adslibrary.util.AdsConstant.NONE;
 import static com.marketdigitalcode.adslibrary.util.AdsConstant.STARTAPP;
 import static com.marketdigitalcode.adslibrary.util.AdsConstant.UNITY;
+import static com.marketdigitalcode.adslibrary.util.AdsConstant.WORTISE;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
@@ -61,12 +63,13 @@ import com.startapp.sdk.ads.nativead.NativeAdDetails;
 import com.startapp.sdk.ads.nativead.NativeAdPreferences;
 import com.startapp.sdk.ads.nativead.StartAppNativeAd;
 import com.startapp.sdk.adsbase.adlisteners.AdEventListener;
+import com.wortise.ads.natives.GoogleNativeAd;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class NativeAdFragment {
-    private static final String TAG = "MdcNativeFragment";
+public class NativeAdView {
+    private static final String TAG = "MdcNativeAdView";
     private final Activity activity;
     View view;
 
@@ -97,79 +100,85 @@ public class NativeAdFragment {
     LinearLayout appLovinDiscoveryMrecAd;
     private AppLovinAdView appLovinAdView;
 
+    private GoogleNativeAd mGoogleNativeAd;
+    FrameLayout wortiseNativeAd;
+
     private String adStatus = "";
     private String adsType = "";
     private String backupAdsType = "";
 
     private String mNativeId = "";
-
     private boolean darkTheme = false;
     private boolean legacyGDPR = false;
 
     private String nativeAdStyle = "";
     private int nativeBackgroundLight = R.color.color_light;
     private int nativeBackgroundDark = R.color.color_dark;
-    public NativeAdFragment(Activity activity) {
+
+    public NativeAdView(Activity activity) {
         this.activity = activity;
     }
 
-    public NativeAdFragment build() {
+    public NativeAdView build() {
         loadNativeAd();
         return this;
     }
 
-    public NativeAdFragment setPadding(int left, int top, int right, int bottom) {
+    public NativeAdView setPadding(int left, int top, int right, int bottom) {
         setNativeAdPadding(left, top, right, bottom);
         return this;
     }
 
-    public NativeAdFragment setMargin(int left, int top, int right, int bottom) {
+    public NativeAdView setMargin(int left, int top, int right, int bottom) {
         setNativeAdMargin(left, top, right, bottom);
         return this;
     }
 
-    public NativeAdFragment setBackgroundResource(int drawableBackground) {
+    public NativeAdView setBackgroundResource(int drawableBackground) {
         setNativeAdBackgroundResource(drawableBackground);
         return this;
     }
 
-    public NativeAdFragment setView(View view) {
+    public NativeAdView setView(View view) {
         this.view = view;
         return this;
     }
-    public NativeAdFragment setAdStatus(String adStatus) {
+
+    public NativeAdView setAdStatus(String adStatus) {
         this.adStatus = adStatus;
         return this;
     }
 
-    public NativeAdFragment setAdsType(String adsType) {
+    public NativeAdView setAdsType(String adsType) {
         this.adsType = adsType;
         return this;
     }
 
-    public NativeAdFragment setBackupAdsType(String backupAdsType) {
+    public NativeAdView setBackupAdsType(String backupAdsType) {
         this.backupAdsType = backupAdsType;
         return this;
     }
 
-    public NativeAdFragment setNativeId(String mNativeId) {
+    public NativeAdView setNativeId(String mNativeId) {
         this.mNativeId = mNativeId;
         return this;
     }
-    public NativeAdFragment setDarkTheme(boolean darkTheme) {
+    public NativeAdView setDarkTheme(boolean darkTheme) {
         this.darkTheme = darkTheme;
         return this;
     }
 
-    public NativeAdFragment setLegacyGDPR(boolean legacyGDPR) {
+    public NativeAdView setLegacyGDPR(boolean legacyGDPR) {
         this.legacyGDPR = legacyGDPR;
         return this;
     }
-    public NativeAdFragment setNativeAdStyle(String nativeAdStyle) {
+
+    public NativeAdView setNativeAdStyle(String nativeAdStyle) {
         this.nativeAdStyle = nativeAdStyle;
         return this;
     }
-    public NativeAdFragment setNativeAdBackgroundColor(int colorLight, int colorDark) {
+
+    public NativeAdView setNativeAdBackgroundColor(int colorLight, int colorDark) {
         this.nativeBackgroundLight = colorLight;
         this.nativeBackgroundDark = colorDark;
         return this;
@@ -201,6 +210,8 @@ public class NativeAdFragment {
 
             applovinNativeAd = view.findViewById(R.id.applovin_native_ad_container);
             appLovinDiscoveryMrecAd = view.findViewById(R.id.applovin_discovery_mrec_ad_container);
+
+            wortiseNativeAd = view.findViewById(R.id.wortise_native_ad_container);
 
             switch (adsType) {
                 case ADMOB:
@@ -515,14 +526,65 @@ public class NativeAdFragment {
                         appLovinDiscoveryMrecAd.addView(this.appLovinAdView);
                         int padding = activity.getResources().getDimensionPixelOffset(R.dimen.gnt_default_margin);
                         appLovinDiscoveryMrecAd.setPadding(0, padding, 0, padding);
-                        if (darkTheme) {
-                            appLovinDiscoveryMrecAd.setBackgroundResource(nativeBackgroundDark);
-                        } else {
-                            appLovinDiscoveryMrecAd.setBackgroundResource(nativeBackgroundLight);
-                        }
                         this.appLovinAdView.loadNextAd();
                     } else {
                         Log.d(TAG, "AppLovin Discovery Mrec Ad has been loaded");
+                    }
+                    break;
+
+                case WORTISE:
+                    if (wortiseNativeAd.getVisibility() != View.VISIBLE) {
+                        mGoogleNativeAd = new GoogleNativeAd(activity, mNativeId, new GoogleNativeAd.Listener() {
+                            @Override
+                            public void onNativeClicked(@NonNull GoogleNativeAd googleNativeAd) {
+
+                            }
+
+                            @Override
+                            public void onNativeFailedToLoad(@NonNull GoogleNativeAd googleNativeAd, @NonNull com.wortise.ads.AdError adError) {
+                                loadBackupNativeAd();
+                                Log.d(TAG, "Wortise Native Ad failed loaded");
+                            }
+
+                            @Override
+                            public void onNativeImpression(@NonNull GoogleNativeAd googleNativeAd) {
+
+                            }
+
+                            @SuppressLint("InflateParams")
+                            @Override
+                            public void onNativeLoaded(@NonNull GoogleNativeAd googleNativeAd, @NonNull com.google.android.gms.ads.nativead.NativeAd nativeAd) {
+                                com.google.android.gms.ads.nativead.NativeAdView adView;
+                                switch (nativeAdStyle) {
+                                    case AdsConstant.STYLE_NEWS:
+                                    case AdsConstant.STYLE_MEDIUM:
+                                        adView = (com.google.android.gms.ads.nativead.NativeAdView) activity.getLayoutInflater().inflate(R.layout.gnt_wortise_news_template_view, null);
+                                        break;
+                                    case AdsConstant.STYLE_VIDEO_SMALL:
+                                        adView = (com.google.android.gms.ads.nativead.NativeAdView) activity.getLayoutInflater().inflate(R.layout.gnt_wortise_video_small_template_view, null);
+                                        break;
+                                    case AdsConstant.STYLE_VIDEO_LARGE:
+                                        adView = (com.google.android.gms.ads.nativead.NativeAdView) activity.getLayoutInflater().inflate(R.layout.gnt_wortise_video_large_template_view, null);
+                                        break;
+                                    case AdsConstant.STYLE_RADIO:
+                                    case AdsConstant.STYLE_SMALL:
+                                        adView = (com.google.android.gms.ads.nativead.NativeAdView) activity.getLayoutInflater().inflate(R.layout.gnt_wortise_radio_template_view, null);
+                                        break;
+                                    default:
+                                        adView = (com.google.android.gms.ads.nativead.NativeAdView) activity.getLayoutInflater().inflate(R.layout.gnt_wortise_medium_template_view, null);
+                                        break;
+                                }
+                                populateNativeAdView(nativeAd, adView);
+                                wortiseNativeAd.removeAllViews();
+                                wortiseNativeAd.addView(adView);
+                                wortiseNativeAd.setVisibility(View.VISIBLE);
+                                nativeAdViewContainer.setVisibility(View.VISIBLE);
+                                Log.d(TAG, "Wortise Native Ad loaded");
+                            }
+                        });
+                        mGoogleNativeAd.load();
+                    } else {
+                        Log.d(TAG, "Wortise Native Ad has been loaded");
                     }
                     break;
 
@@ -536,6 +598,7 @@ public class NativeAdFragment {
         }
 
     }
+
     public void loadBackupNativeAd() {
 
         if (adStatus.equals(AD_STATUS_ON)) {
@@ -563,6 +626,8 @@ public class NativeAdFragment {
 
             applovinNativeAd = view.findViewById(R.id.applovin_native_ad_container);
             appLovinDiscoveryMrecAd = view.findViewById(R.id.applovin_discovery_mrec_ad_container);
+
+            wortiseNativeAd = view.findViewById(R.id.wortise_native_ad_container);
 
             switch (backupAdsType) {
                 case ADMOB:
@@ -877,20 +942,69 @@ public class NativeAdFragment {
                         appLovinDiscoveryMrecAd.addView(this.appLovinAdView);
                         int padding = activity.getResources().getDimensionPixelOffset(R.dimen.gnt_default_margin);
                         appLovinDiscoveryMrecAd.setPadding(0, padding, 0, padding);
-                        if (darkTheme) {
-                            appLovinDiscoveryMrecAd.setBackgroundResource(nativeBackgroundDark);
-                        } else {
-                            appLovinDiscoveryMrecAd.setBackgroundResource(nativeBackgroundLight);
-                        }
                         this.appLovinAdView.loadNextAd();
                     } else {
                         Log.d(TAG, "AppLovin Discovery Mrec Ad has been loaded");
                     }
                     break;
 
+                case WORTISE:
+                    if (wortiseNativeAd.getVisibility() != View.VISIBLE) {
+                        mGoogleNativeAd = new GoogleNativeAd(activity, mNativeId, new GoogleNativeAd.Listener() {
+                            @Override
+                            public void onNativeClicked(@NonNull GoogleNativeAd googleNativeAd) {
+
+                            }
+
+                            @Override
+                            public void onNativeFailedToLoad(@NonNull GoogleNativeAd googleNativeAd, @NonNull com.wortise.ads.AdError adError) {
+                                Log.d(TAG, "[Backup] Wortise Native Ad failed loaded");
+                            }
+
+                            @Override
+                            public void onNativeImpression(@NonNull GoogleNativeAd googleNativeAd) {
+
+                            }
+
+                            @SuppressLint("InflateParams")
+                            @Override
+                            public void onNativeLoaded(@NonNull GoogleNativeAd googleNativeAd, @NonNull com.google.android.gms.ads.nativead.NativeAd nativeAd) {
+                                com.google.android.gms.ads.nativead.NativeAdView adView;
+                                switch (nativeAdStyle) {
+                                    case AdsConstant.STYLE_NEWS:
+                                    case AdsConstant.STYLE_MEDIUM:
+                                        adView = (com.google.android.gms.ads.nativead.NativeAdView) activity.getLayoutInflater().inflate(R.layout.gnt_wortise_news_template_view, null);
+                                        break;
+                                    case AdsConstant.STYLE_VIDEO_SMALL:
+                                        adView = (com.google.android.gms.ads.nativead.NativeAdView) activity.getLayoutInflater().inflate(R.layout.gnt_wortise_video_small_template_view, null);
+                                        break;
+                                    case AdsConstant.STYLE_VIDEO_LARGE:
+                                        adView = (com.google.android.gms.ads.nativead.NativeAdView) activity.getLayoutInflater().inflate(R.layout.gnt_wortise_video_large_template_view, null);
+                                        break;
+                                    case AdsConstant.STYLE_RADIO:
+                                    case AdsConstant.STYLE_SMALL:
+                                        adView = (com.google.android.gms.ads.nativead.NativeAdView) activity.getLayoutInflater().inflate(R.layout.gnt_wortise_radio_template_view, null);
+                                        break;
+                                    default:
+                                        adView = (com.google.android.gms.ads.nativead.NativeAdView) activity.getLayoutInflater().inflate(R.layout.gnt_wortise_medium_template_view, null);
+                                        break;
+                                }
+                                populateNativeAdView(nativeAd, adView);
+                                wortiseNativeAd.removeAllViews();
+                                wortiseNativeAd.addView(adView);
+                                wortiseNativeAd.setVisibility(View.VISIBLE);
+                                nativeAdViewContainer.setVisibility(View.VISIBLE);
+                                Log.d(TAG, "[Backup] Wortise Native Ad loaded");
+                            }
+                        });
+                        mGoogleNativeAd.load();
+                    } else {
+                        Log.d(TAG, "[Backup] Wortise Native Ad has been loaded");
+                    }
+                    break;
+
                 case APPNEXT:
                 case UNITY:
-
                 case NONE:
                     nativeAdViewContainer.setVisibility(View.GONE);
                     break;
@@ -900,6 +1014,7 @@ public class NativeAdFragment {
         }
 
     }
+
     public void setNativeAdPadding(int left, int top, int right, int bottom) {
         nativeAdViewContainer = view.findViewById(R.id.native_ad_view_container);
         nativeAdViewContainer.setPadding(left, top, right, bottom);
@@ -922,6 +1037,7 @@ public class NativeAdFragment {
             view.requestLayout();
         }
     }
+
     public void setNativeAdBackgroundResource(int drawableBackground) {
         nativeAdViewContainer = view.findViewById(R.id.native_ad_view_container);
         nativeAdViewContainer.setBackgroundResource(drawableBackground);
@@ -1053,6 +1169,50 @@ public class NativeAdFragment {
                 break;
         }
         return new MaxNativeAdView(binder, activity);
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public void populateNativeAdView(com.google.android.gms.ads.nativead.NativeAd nativeAd, com.google.android.gms.ads.nativead.NativeAdView nativeAdView) {
+
+        if (darkTheme) {
+            nativeAdViewContainer.setBackgroundColor(ContextCompat.getColor(activity, nativeBackgroundDark));
+            nativeAdView.findViewById(R.id.background).setBackgroundResource(nativeBackgroundDark);
+        } else {
+            nativeAdViewContainer.setBackgroundColor(ContextCompat.getColor(activity, nativeBackgroundLight));
+            nativeAdView.findViewById(R.id.background).setBackgroundResource(nativeBackgroundLight);
+        }
+
+        nativeAdView.setMediaView(nativeAdView.findViewById(R.id.media_view));
+        nativeAdView.setHeadlineView(nativeAdView.findViewById(R.id.primary));
+        nativeAdView.setBodyView(nativeAdView.findViewById(R.id.body));
+        nativeAdView.setCallToActionView(nativeAdView.findViewById(R.id.cta));
+        nativeAdView.setIconView(nativeAdView.findViewById(R.id.icon));
+
+        ((TextView) nativeAdView.getHeadlineView()).setText(nativeAd.getHeadline());
+        nativeAdView.getMediaView().setMediaContent(nativeAd.getMediaContent());
+
+        if (nativeAd.getBody() == null) {
+            nativeAdView.getBodyView().setVisibility(View.INVISIBLE);
+        } else {
+            nativeAdView.getBodyView().setVisibility(View.VISIBLE);
+            ((TextView) nativeAdView.getBodyView()).setText(nativeAd.getBody());
+        }
+
+        if (nativeAd.getCallToAction() == null) {
+            nativeAdView.getCallToActionView().setVisibility(View.INVISIBLE);
+        } else {
+            nativeAdView.getCallToActionView().setVisibility(View.VISIBLE);
+            ((Button) nativeAdView.getCallToActionView()).setText(nativeAd.getCallToAction());
+        }
+
+        if (nativeAd.getIcon() == null) {
+            nativeAdView.getIconView().setVisibility(View.GONE);
+        } else {
+            ((ImageView) nativeAdView.getIconView()).setImageDrawable(nativeAd.getIcon().getDrawable());
+            nativeAdView.getIconView().setVisibility(View.VISIBLE);
+        }
+
+        nativeAdView.setNativeAd(nativeAd);
     }
 
 

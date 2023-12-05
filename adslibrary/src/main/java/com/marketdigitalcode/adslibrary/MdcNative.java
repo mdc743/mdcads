@@ -128,8 +128,9 @@ public class MdcNative {
         this.view = view;
         return this;
     }
-    public void setPadding(int left, int top, int right, int bottom) {
+    public MdcNative setPadding(int left, int top, int right, int bottom) {
         setNativeAdPadding(left, top, right, bottom);
+        return this;
     }
     public MdcNative setAdStatus(String adStatus) {
         this.adStatus = adStatus;
@@ -444,7 +445,7 @@ public class MdcNative {
                         nativeAdLoader = new MaxNativeAdLoader(mNativeId, activity);
                         nativeAdLoader.setNativeAdListener(new MaxNativeAdListener() {
                             @Override
-                            public void onNativeAdLoaded(final MaxNativeAdView nativeAdView, final MaxAd ad) {
+                            public void onNativeAdLoaded(final MaxNativeAdView nativeAdView, @NonNull final MaxAd ad) {
                                 // Clean up any pre-existing native ad to prevent memory leaks.
                                 if (maxAd != null) {
                                     nativeAdLoader.destroy(maxAd);
@@ -872,7 +873,7 @@ public class MdcNative {
                         nativeAdLoader = new MaxNativeAdLoader(mNativeId, activity);
                         nativeAdLoader.setNativeAdListener(new MaxNativeAdListener() {
                             @Override
-                            public void onNativeAdLoaded(final MaxNativeAdView nativeAdView, final MaxAd ad) {
+                            public void onNativeAdLoaded(final MaxNativeAdView nativeAdView, @NonNull final MaxAd ad) {
                                 // Clean up any pre-existing native ad to prevent memory leaks.
                                 if (maxAd != null) {
                                     nativeAdLoader.destroy(maxAd);
@@ -902,7 +903,7 @@ public class MdcNative {
                             }
 
                             @Override
-                            public void onNativeAdClicked(final MaxAd ad) {
+                            public void onNativeAdClicked(@NonNull final MaxAd ad) {
                                 // Optional click callback
                             }
                         });

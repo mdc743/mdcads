@@ -102,7 +102,7 @@ afterEvaluate {
                 from components.release
                 groupId 'com.github.mdc743'
                 artifactId 'adslibrary'
-                version '1.1.0'
+                version '1.2.0'
             }
         }
     }

@@ -869,10 +869,8 @@ public class MdcBanner {
                     ironSourceBannerView.removeView(ironSourceBannerLayout);
                 }
             }
-            if (adsType.equals(APPNEXT)) {
-                if (appNextbannerView != null) {
-                    appNextbannerView.destroy();
-                }
+            if (adsType.equals(APPNEXT) || backupAdsType.equals(APPNEXT)) {
+                appNextbannerView.destroy();
             }
         }
     }
