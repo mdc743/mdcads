@@ -135,13 +135,11 @@ public class ScreenActivity extends AppCompatActivity implements OnShowAdComplet
     }
 
     private void goToMainApp() {
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            Intent intent = new Intent(ScreenActivity.this, HomeActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(intent);
-            finish();
-            overridePendingTransition(R.anim.myanim_in, R.anim.myanim_out);
-        }, 200);
+        Intent intent = new Intent(ScreenActivity.this, HomeActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
+        finish();
+        overridePendingTransition(R.anim.myanim_in, R.anim.myanim_out);
     }
 
     @Override
